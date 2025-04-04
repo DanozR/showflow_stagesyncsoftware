@@ -22,6 +22,16 @@ const isDevelopment = process.env.NODE_ENV === 'development' ||
   window.location.hostname.includes('webcontainer.io');
 
 export async function checkAccess() {
+  // Log environment variables and development status
+  console.log('Environment Check:', {
+    isDevelopment,
+    VITE_DASHBOARD_URL: import.meta.env.VITE_DASHBOARD_URL,
+    VITE_DASHBOARD_SUPABASE_URL: import.meta.env.VITE_DASHBOARD_SUPABASE_URL,
+    VITE_DASHBOARD_SUPABASE_ANON_KEY: '[REDACTED]',
+    NODE_ENV: process.env.NODE_ENV,
+    hostname: window.location.hostname
+  });
+
   // Always return true in development
   if (isDevelopment) {
     console.log('Development mode detected - bypassing auth checks');
@@ -30,35 +40,86 @@ export async function checkAccess() {
 
   try {
     // Get current session from the app's Supabase
-    const { data: { session } } = await appSupabase.auth.getSession();
+    console.log('Fetching Supabase session...');
+    const { data: { session }, error: sessionError } = await appSupabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Session fetch error:', sessionError);
+      throw sessionError;
+    }
+
+    console.log('Session status:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      // Redact sensitive information but confirm presence
+      hasAccessToken: !!session?.access_token
+    });
+
     if (!session) {
+      console.log('No session found, redirecting to login...');
       window.location.href = `${import.meta.env.VITE_DASHBOARD_URL}/login`;
       return false;
     }
 
+    // Construct subscription check URL
+    const subscriptionCheckUrl = `${import.meta.env.VITE_DASHBOARD_URL}/api/check-subscription`;
+    console.log('Checking subscription at:', subscriptionCheckUrl);
+
+    // Prepare request details
+    const requestBody = {
+      userId: session.user.id,
+      appName: 'showflow'
+    };
+
+    console.log('Subscription check request:', {
+      url: subscriptionCheckUrl,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer [REDACTED]'
+      },
+      body: requestBody
+    });
+
     // Check subscription against the dashboard's Supabase
     const response = await fetch(
-      `${import.meta.env.VITE_DASHBOARD_URL}/api/check-subscription`,
+      subscriptionCheckUrl,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          userId: session.user.id,
-          appName: 'showflow'
-        }),
+        body: JSON.stringify(requestBody),
       }
     );
 
-    const { hasAccess } = await response.json();
+    console.log('Subscription check response:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    if (!response.ok) {
+      console.error('Subscription check failed:', {
+        status: response.status,
+        statusText: response.statusText
+      });
+      throw new Error(`Subscription check failed: ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('Subscription check result:', responseData);
+
+    const { hasAccess } = responseData;
 
     if (!hasAccess) {
+      console.log('No access, redirecting to account page...');
       window.location.href = `${import.meta.env.VITE_DASHBOARD_URL}/account`;
       return false;
     }
 
+    console.log('Access check successful');
     return true;
   } catch (error) {
     console.error('Access check failed:', error);
