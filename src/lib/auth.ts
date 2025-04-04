@@ -9,6 +9,11 @@ const isDevelopment = process.env.NODE_ENV === 'development' ||
   window.location.hostname.includes('stackblitz.io') ||
   window.location.hostname.includes('webcontainer.io');
 
+// Log environment variables for debugging
+console.log('Auth - Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+console.log('Auth - Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY);
+console.log('Auth - Dashboard URL:', import.meta.env.VITE_DASHBOARD_URL);
+
 // Create Supabase clients
 const appSupabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,

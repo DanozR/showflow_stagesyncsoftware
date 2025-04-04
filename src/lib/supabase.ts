@@ -10,6 +10,14 @@ const isDevelopment = process.env.NODE_ENV === 'development' ||
   window.location.hostname.includes('stackblitz.io') ||
   window.location.hostname.includes('webcontainer.io');
 
+// Log environment variables for debugging
+console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+console.log('Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  throw new Error('Missing required environment variables for Supabase configuration');
+}
+
 // Create the Supabase client
 export const supabase = createClient<Database>(
   import.meta.env.VITE_SUPABASE_URL,
