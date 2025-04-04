@@ -10,19 +10,31 @@ const isDevelopment = process.env.NODE_ENV === 'development' ||
   window.location.hostname.includes('stackblitz.io') ||
   window.location.hostname.includes('webcontainer.io');
 
-// Log environment check
+// Validate environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing required environment variables:', {
+    hasUrl: !!supabaseUrl,
+    hasAnonKey: !!supabaseAnonKey
+  });
+  throw new Error('Required environment variables are missing');
+}
+
+// Log environment check (but not sensitive values)
 console.log('Supabase Client Environment Check:', {
   isDevelopment,
-  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-  hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+  hasUrl: !!supabaseUrl,
+  hasAnonKey: !!supabaseAnonKey,
   NODE_ENV: process.env.NODE_ENV,
   hostname: window.location.hostname
 });
 
 // Create the Supabase client
 export const supabase = createClient<Database>(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       autoRefreshToken: true,

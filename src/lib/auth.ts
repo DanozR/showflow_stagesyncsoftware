@@ -1,15 +1,34 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Validate environment variables
+const appSupabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const appSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const dashboardSupabaseUrl = import.meta.env.VITE_DASHBOARD_SUPABASE_URL;
+const dashboardSupabaseAnonKey = import.meta.env.VITE_DASHBOARD_SUPABASE_ANON_KEY;
+const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
+
+// Validate required environment variables
+if (!appSupabaseUrl || !appSupabaseAnonKey || !dashboardSupabaseUrl || !dashboardSupabaseAnonKey || !dashboardUrl) {
+  console.error('Missing required environment variables:', {
+    hasAppUrl: !!appSupabaseUrl,
+    hasAppKey: !!appSupabaseAnonKey,
+    hasDashboardUrl: !!dashboardSupabaseUrl,
+    hasDashboardKey: !!dashboardSupabaseAnonKey,
+    hasDashboardWebUrl: !!dashboardUrl
+  });
+  throw new Error('Required environment variables are missing');
+}
+
 // Use the app's own Supabase URL and anon key for general app functionality
 const appSupabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
+  appSupabaseUrl,
+  appSupabaseAnonKey
 );
 
 // Use the dashboard's Supabase URL and anon key for subscription checks
 const dashboardSupabase = createClient(
-  import.meta.env.VITE_DASHBOARD_SUPABASE_URL,
-  import.meta.env.VITE_DASHBOARD_SUPABASE_ANON_KEY
+  dashboardSupabaseUrl,
+  dashboardSupabaseAnonKey
 );
 
 // Check if we're in development mode
@@ -25,9 +44,11 @@ export async function checkAccess() {
   // Log environment variables and development status
   console.log('Environment Check:', {
     isDevelopment,
-    VITE_DASHBOARD_URL: import.meta.env.VITE_DASHBOARD_URL,
-    VITE_DASHBOARD_SUPABASE_URL: import.meta.env.VITE_DASHBOARD_SUPABASE_URL,
-    VITE_DASHBOARD_SUPABASE_ANON_KEY: '[REDACTED]',
+    hasAppUrl: !!appSupabaseUrl,
+    hasAppKey: !!appSupabaseAnonKey,
+    hasDashboardUrl: !!dashboardSupabaseUrl,
+    hasDashboardKey: !!dashboardSupabaseAnonKey,
+    hasDashboardWebUrl: !!dashboardUrl,
     NODE_ENV: process.env.NODE_ENV,
     hostname: window.location.hostname
   });
@@ -57,12 +78,12 @@ export async function checkAccess() {
 
     if (!session) {
       console.log('No session found, redirecting to login...');
-      window.location.href = `${import.meta.env.VITE_DASHBOARD_URL}/login`;
+      window.location.href = `${dashboardUrl}/login`;
       return false;
     }
 
     // Construct subscription check URL
-    const subscriptionCheckUrl = `${import.meta.env.VITE_DASHBOARD_URL}/api/check-subscription`;
+    const subscriptionCheckUrl = `${dashboardUrl}/api/check-subscription`;
     console.log('Checking subscription at:', subscriptionCheckUrl);
 
     // Prepare request details
@@ -115,7 +136,7 @@ export async function checkAccess() {
 
     if (!hasAccess) {
       console.log('No access, redirecting to account page...');
-      window.location.href = `${import.meta.env.VITE_DASHBOARD_URL}/account`;
+      window.location.href = `${dashboardUrl}/account`;
       return false;
     }
 
@@ -127,7 +148,7 @@ export async function checkAccess() {
       console.log('Development mode - continuing despite error');
       return true;
     }
-    window.location.href = `${import.meta.env.VITE_DASHBOARD_URL}/login`;
+    window.location.href = `${dashboardUrl}/login`;
     return false;
   }
 }
