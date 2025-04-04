@@ -7,22 +7,6 @@ const dashboardSupabaseUrl = import.meta.env.VITE_DASHBOARD_SUPABASE_URL;
 const dashboardSupabaseAnonKey = import.meta.env.VITE_DASHBOARD_SUPABASE_ANON_KEY;
 const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
 
-// Validate required environment variables
-if (!appSupabaseUrl || !appSupabaseAnonKey || !dashboardSupabaseUrl || !dashboardSupabaseAnonKey || !dashboardUrl) {
-  console.error('Missing required environment variables:', {
-    hasAppUrl: !!appSupabaseUrl,
-    hasAppKey: !!appSupabaseAnonKey,
-    hasDashboardUrl: !!dashboardSupabaseUrl,
-    hasDashboardKey: !!dashboardSupabaseAnonKey,
-    hasDashboardWebUrl: !!dashboardUrl
-  });
-  throw new Error('Required environment variables are missing');
-}
-
-// Create Supabase clients
-const appSupabase = createClient(appSupabaseUrl, appSupabaseAnonKey);
-const dashboardSupabase = createClient(dashboardSupabaseUrl, dashboardSupabaseAnonKey);
-
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development' || 
   window.location.hostname === 'localhost' ||
@@ -32,7 +16,48 @@ const isDevelopment = process.env.NODE_ENV === 'development' ||
   window.location.hostname.includes('stackblitz.io') ||
   window.location.hostname.includes('webcontainer.io');
 
+// In development, use default values if env vars are missing
+const getEnvVar = (value: string | undefined, defaultValue: string): string => {
+  if (isDevelopment) {
+    return value || defaultValue;
+  }
+  return value || '';
+};
+
+// Set up environment variables with development fallbacks
+const env = {
+  appUrl: getEnvVar(appSupabaseUrl, 'https://avehrshbpoivtjmrfflr.supabase.co'),
+  appKey: getEnvVar(appSupabaseAnonKey, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2ZWhyc2hicG9pdnRqbXJmZmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0NDMyMTcsImV4cCI6MjA1ODAxOTIxN30.mtVlPhnopLbZcV8Iw6JvEBInYPajt3X8wpVxMDAB6q4'),
+  dashboardUrl: getEnvVar(dashboardUrl, 'https://app.stagesyncsoftware.com'),
+  dashboardSupabaseUrl: getEnvVar(dashboardSupabaseUrl, 'https://utsdvojhtdxuudgeecgj.supabase.co'),
+  dashboardSupabaseKey: getEnvVar(dashboardSupabaseAnonKey, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0c2R2b2podGR4dXVkZ2VlY2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1MzAwNDIsImV4cCI6MjA1ODEwNjA0Mn0.KItV_gEtaxSNKStv6fZ6CjGAnUUrMPe2nuXg6ERKmyo')
+};
+
+// Validate environment variables in production
+if (!isDevelopment) {
+  const missingVars = Object.entries(env).filter(([_, value]) => !value);
+  if (missingVars.length > 0) {
+    console.error('Missing required environment variables:', {
+      hasAppUrl: !!env.appUrl,
+      hasAppKey: !!env.appKey,
+      hasDashboardUrl: !!env.dashboardUrl,
+      hasDashboardSupabaseUrl: !!env.dashboardSupabaseUrl,
+      hasDashboardKey: !!env.dashboardSupabaseKey
+    });
+    throw new Error('Required environment variables are missing');
+  }
+}
+
+// Create Supabase clients
+const appSupabase = createClient(env.appUrl, env.appKey);
+const dashboardSupabase = createClient(env.dashboardSupabaseUrl, env.dashboardSupabaseKey);
+
 export async function checkAccess() {
+  if (isDevelopment) {
+    console.log('Development mode detected - skipping auth check');
+    return true;
+  }
+
   try {
     // Get current session
     const { data: { session }, error: sessionError } = await appSupabase.auth.getSession();
@@ -44,13 +69,13 @@ export async function checkAccess() {
 
     if (!session) {
       console.log('No session found, redirecting to login...');
-      window.location.href = `${dashboardUrl}/login`;
+      window.location.href = `${env.dashboardUrl}/login`;
       return false;
     }
 
     // Check subscription
     const response = await fetch(
-      `${dashboardUrl}/api/check-subscription`,
+      `${env.dashboardUrl}/api/check-subscription`,
       {
         method: 'POST',
         headers: {
@@ -71,14 +96,14 @@ export async function checkAccess() {
     const { hasAccess } = await response.json();
 
     if (!hasAccess) {
-      window.location.href = `${dashboardUrl}/account`;
+      window.location.href = `${env.dashboardUrl}/account`;
       return false;
     }
 
     return true;
   } catch (error) {
     console.error('Access check failed:', error);
-    window.location.href = `${dashboardUrl}/login`;
+    window.location.href = `${env.dashboardUrl}/login`;
     return false;
   }
 }
