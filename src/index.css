@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-charcoal: #333333;
+  --color-taupe: #B8A394;
+  --color-coral: #f28c82;
+}
+
+@layer components {
+  .btn-coral {
+    @apply bg-coral text-white hover:bg-coral/90;
+  }
+
+  .btn-charcoal {
+    @apply bg-charcoal text-white hover:bg-charcoal/90;
+  }
+
+  .btn-taupe {
+    @apply bg-taupe text-white hover:bg-taupe/90;
+  }
+}
