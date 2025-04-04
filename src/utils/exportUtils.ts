@@ -365,6 +365,23 @@ export const exportToPDF = (
   };
 };
 
+interface CSVDataRow {
+  export_date: string;
+  show_name: string;
+  date: string;
+  time: string;
+  location: string;
+  performance_number: number;
+  class_name: string;
+  performance_title: string;
+  student_count: number;
+  student_id: string;
+  first_name: string;
+  last_name: string;
+  student_performance_order: string;
+  conflict: string;
+}
+
 // Export detailed show data to CSV
 export const exportToCSV = (
   classes: DanceClass[],
@@ -402,7 +419,7 @@ export const exportToCSV = (
   });
 
   // Create the CSV data
-  const csvData = [];
+  const csvData: CSVDataRow[] = [];
 
   // Add a row for each student in each performance
   showClasses.forEach((cls, index) => {
@@ -429,25 +446,7 @@ export const exportToCSV = (
   });
 
   // Convert to CSV
-  const csv = Papa.unparse(csvData, {
-    header: true,
-    columns: [
-      'export_date',
-      'show_name',
-      'date',
-      'time',
-      'location',
-      'performance_number',
-      'class_name',
-      'performance_title',
-      'student_count',
-      'student_id',
-      'first_name',
-      'last_name',
-      'student_performance_order',
-      'conflict'
-    ]
-  });
+  const csv = Papa.unparse(csvData);
 
   // Create and download the file
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

@@ -12,11 +12,14 @@ function getWorker() {
   return worker;
 }
 
+// Define return type for optimization functions
+type OptimizationResult = Promise<{ orderedClasses: DanceClass[]; conflicts: Conflict[] }>;
+
 // Optimize show order using the worker
-export const optimizeShowOrderAsync = (
+export const optimizeShowOrderAsync = async (
   classes: DanceClass[],
   minGap: number
-): Promise<{ orderedClasses: DanceClass[], conflicts: Conflict[] }> => {
+): OptimizationResult => {
   return new Promise((resolve, reject) => {
     const worker = getWorker();
     
@@ -46,13 +49,12 @@ export const optimizeShowOrderAsync = (
 };
 
 // Fallback function for when Web Workers aren't available
-// This is the same as the worker implementation but runs in the main thread
-export const optimizeShowOrderSync = (
+export const optimizeShowOrderSync = async (
   classes: DanceClass[],
   minGap: number
-): { orderedClasses: DanceClass[], conflicts: Conflict[] } => {
+): OptimizationResult => {
   // Import the optimizer from the original file
-  const { optimizeShowOrder } = require('./showOptimizer');
+  const { optimizeShowOrder } = await import('./showOptimizer');
   return optimizeShowOrder(classes, minGap);
 };
 

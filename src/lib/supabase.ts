@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, AuthChangeEvent } from '@supabase/supabase-js';
 
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development' || 
@@ -22,9 +22,9 @@ export const supabase = createClient(
 );
 
 // Listen for auth changes
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
   // Skip redirects in development
-  if (!isDevelopment && (event === 'SIGNED_OUT' || event === 'USER_DELETED')) {
+  if (!isDevelopment && event === 'SIGNED_OUT') {
     window.location.href = `${import.meta.env.VITE_DASHBOARD_URL}/login`;
   }
 });

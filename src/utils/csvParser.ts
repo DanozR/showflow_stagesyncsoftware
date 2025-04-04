@@ -1,18 +1,25 @@
 import Papa from 'papaparse';
 import { Student } from '../types';
 
+interface CSVRow {
+  first_name: string;
+  last_name: string;
+  classes: string;
+  performer_id?: string;
+  student_id?: string;
+}
+
 export const parseCSV = (file: File, excludePrivateLessons: boolean = true): Promise<Student[]> => {
   return new Promise((resolve, reject) => {
-    Papa.parse(file, {
+    Papa.parse<CSVRow>(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
         try {
-          const students: Student[] = [];
           const studentMap = new Map<string, Student>();
           let autoIncrementId = 1;
 
-          results.data.forEach((row: any) => {
+          results.data.forEach((row) => {
             // Check for required fields
             if (!row.first_name || !row.last_name || !row.classes) {
               throw new Error('CSV file must contain first_name, last_name, and classes columns');
