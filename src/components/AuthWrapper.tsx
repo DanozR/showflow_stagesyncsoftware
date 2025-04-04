@@ -9,9 +9,9 @@ interface AuthWrapperProps {
 export function AuthWrapper({ children }: AuthWrapperProps) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Keep consistent with auth.ts and supabase.ts
     const isDevelopment = process.env.NODE_ENV === 'development' || 
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1' ||
@@ -20,40 +20,41 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       window.location.hostname.includes('stackblitz.io') ||
       window.location.hostname.includes('webcontainer.io');
 
-    console.log('AuthWrapper Environment Check:', {
-      isDevelopment,
-      NODE_ENV: process.env.NODE_ENV,
-      hostname: window.location.hostname
-    });
-
     if (isDevelopment) {
-      console.log('Development mode detected in AuthWrapper - skipping auth check');
+      console.log('Development mode detected - skipping auth check');
       setIsAuthorized(true);
       setIsLoading(false);
       return;
     }
 
-    console.log('Starting access check...');
-    checkAccess()
-      .then(hasAccess => {
-        console.log('Access check complete:', { hasAccess });
+    const checkUserAccess = async () => {
+      try {
+        const hasAccess = await checkAccess();
         setIsAuthorized(hasAccess);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error('Access check failed in AuthWrapper:', error);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Authentication failed');
         setIsAuthorized(false);
+      } finally {
         setIsLoading(false);
-      });
-  }, []);
+      }
+    };
 
-  // Log state changes
-  useEffect(() => {
-    console.log('AuthWrapper state updated:', {
-      isAuthorized,
-      isLoading
+    checkUserAccess();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        checkUserAccess();
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthorized(false);
+      }
     });
-  }, [isAuthorized, isLoading]);
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -66,11 +67,26 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Authentication Error</h2>
+          <p className="text-gray-600">{error}</p>
+          <button
+            onClick={() => window.location.href = `${import.meta.env.VITE_DASHBOARD_URL}/login`}
+            className="mt-6 w-full bg-coral text-white py-2 px-4 rounded hover:bg-coral/90 transition-colors"
+          >
+            Return to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthorized) {
-    console.log('User not authorized, rendering null (redirect handled in checkAccess)');
     return null;
   }
 
-  console.log('User authorized, rendering children');
   return <>{children}</>;
 }
