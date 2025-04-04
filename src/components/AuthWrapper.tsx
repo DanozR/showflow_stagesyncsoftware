@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { checkAccess } from '../lib/auth';
+import { supabase } from '../lib/supabase';
 
-export function AuthWrapper({ children }: { children: React.ReactNode }) {
+interface AuthWrapperProps {
+  children: React.ReactNode;
+}
+
+export function AuthWrapper({ children }: AuthWrapperProps) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
