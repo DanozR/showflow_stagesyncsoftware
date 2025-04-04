@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Student, DanceClass, Conflict, ShowInfo } from './types';
+import { AuthWrapper } from './components/AuthWrapper';
 import FileUpload from './components/FileUpload';
 import ClassList from './components/ClassList';
 import ShowOrder from './components/ShowOrder';
@@ -491,270 +492,272 @@ function App() {
   const includedClasses = classes.filter(c => c.included);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col space-y-4">
-            {/* Logo */}
-            <div className="flex items-center justify-between">
-              <img 
-                src="https://i.imgur.com/o5iWGOq.png" 
-                alt="ShowFlow" 
-                className="h-20"
-              />
-              <button
-                onClick={() => setShowInfoOpen(true)}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-charcoal bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
-              >
-                <Info className="h-4 w-4 mr-1" />
-                Edit Show Info
-              </button>
-            </div>
-            
-            {/* Show info */}
-            <div className="border-t border-gray-200 pt-4">
-              <h2 className="text-2xl font-semibold text-charcoal">{showInfo.name}</h2>
-              <div className="mt-1 text-sm text-gray-600">
-                {showInfo.date && new Date(showInfo.date).toLocaleDateString()} {showInfo.time && `at ${showInfo.time}`}
-                {showInfo.location && ` • ${showInfo.location}`}
+    <AuthWrapper>
+      <div className="min-h-screen bg-gray-100">
+        <header className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col space-y-4">
+              {/* Logo */}
+              <div className="flex items-center justify-between">
+                <img 
+                  src="https://i.imgur.com/o5iWGOq.png" 
+                  alt="ShowFlow" 
+                  className="h-20"
+                />
+                <button
+                  onClick={() => setShowInfoOpen(true)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-charcoal bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
+                >
+                  <Info className="h-4 w-4 mr-1" />
+                  Edit Show Info
+                </button>
+              </div>
+              
+              {/* Show info */}
+              <div className="border-t border-gray-200 pt-4">
+                <h2 className="text-2xl font-semibold text-charcoal">{showInfo.name}</h2>
+                <div className="mt-1 text-sm text-gray-600">
+                  {showInfo.date && new Date(showInfo.date).toLocaleDateString()} {showInfo.time && `at ${showInfo.time}`}
+                  {showInfo.location && ` • ${showInfo.location}`}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </header>
-      
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        {students.length === 0 ? (
-          <div className="mt-8">
-            <FileUpload onStudentsLoaded={handleStudentsLoaded} />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white rounded-lg shadow p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-medium text-charcoal">Settings</h2>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={handleOptimize}
-                      disabled={isOptimizing}
-                      className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white ${
-                        isOptimizing 
-                          ? 'bg-coral/60 cursor-not-allowed' 
-                          : 'bg-coral hover:bg-coral/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral'
-                      }`}
-                    >
-                      {isOptimizing ? (
-                        <>
-                          <div className="animate-spin h-4 w-4 mr-1 border-2 border-white border-t-transparent rounded-full"></div>
-                          Optimizing...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-1" />
-                          Re-optimize
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <label htmlFor="minGap" className="block text-sm font-medium text-charcoal mb-1">
-                    Minimum gap between performer appearances: {minGap}
-                  </label>
-                  <input
-                    id="minGap"
-                    type="range"
-                    min="1"
-                    max="5"
-                    step="1"
-                    value={minGap}
-                    onChange={(e) => setMinGap(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>1</span>
-                    <span>2</span>
-                    <span>3</span>
-                    <span>4</span>
-                    <span>5</span>
-                  </div>
-                </div>
-                
-                {conflicts.length > 0 && (
-                  <div className="mb-4 p-3 bg-coral/10 border border-coral/20 rounded-md">
-                    <h3 className="text-sm font-medium text-charcoal mb-1">Conflict Summary:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-coral/20 text-charcoal">
-                        Total: {conflictStats.total}
-                      </span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        conflictStats.backToBack > 0 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        Back-to-back: {conflictStats.backToBack}
-                      </span>
-                      {conflictStats.byGap.filter(s => s.gap > 0).map(stat => (
-                        <span 
-                          key={stat.gap} 
-                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-coral/20 text-charcoal"
-                        >
-                          {stat.gap} gap: {stat.count}
-                        </span>
-                      ))}
+        </header>
+        
+        <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+          {students.length === 0 ? (
+            <div className="mt-8">
+              <FileUpload onStudentsLoaded={handleStudentsLoaded} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 space-y-6">
+                <div className="bg-white rounded-lg shadow p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-medium text-charcoal">Settings</h2>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={handleOptimize}
+                        disabled={isOptimizing}
+                        className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white ${
+                          isOptimizing 
+                            ? 'bg-coral/60 cursor-not-allowed' 
+                            : 'bg-coral hover:bg-coral/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral'
+                        }`}
+                      >
+                        {isOptimizing ? (
+                          <>
+                            <div className="animate-spin h-4 w-4 mr-1 border-2 border-white border-t-transparent rounded-full"></div>
+                            Optimizing...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-1" />
+                            Re-optimize
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
-                )}
-                
-                {students.length > 0 && classes.length > 0 && (
+                  
                   <div className="mb-4">
-                    <ExportButtons 
-                      classes={classes}
-                      students={students}
-                      conflicts={conflicts}
-                      minGap={minGap}
-                      showInfo={showInfo}
-                      showInSettings={true}
+                    <label htmlFor="minGap" className="block text-sm font-medium text-charcoal mb-1">
+                      Minimum gap between performer appearances: {minGap}
+                    </label>
+                    <input
+                      id="minGap"
+                      type="range"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value={minGap}
+                      onChange={(e) => setMinGap(Number(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                     />
-                  </div>
-                )}
-                
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="flex space-x-1 border-b border-gray-200">
-                    <button
-                      className={`px-4 py-2 text-sm font-medium ${
-                        activeTab === 'classes'
-                          ? 'border-b-2 border-coral text-coral'
-                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                      onClick={() => setActiveTab('classes')}
-                    >
-                      <div className="flex items-center">
-                        <Music className="h-4 w-4 mr-1" />
-                        Classes
-                      </div>
-                    </button>
-                    <button
-                      className={`px-4 py-2 text-sm font-medium ${
-                        activeTab === 'students'
-                          ? 'border-b-2 border-coral text-coral'
-                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                      onClick={() => setActiveTab('students')}
-                    >
-                      <div className="flex items-center">
-                        <Users className="h-4 w-4 mr-1" />
-                        Performers
-                      </div>
-                    </button>
-                    <button
-                      className={`px-4 py-2 text-sm font-medium ${
-                        activeTab === 'conflicts'
-                          ? 'border-b-2 border-coral text-coral'
-                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                      onClick={() => setActiveTab('conflicts')}
-                    >
-                      <div className="flex items-center">
-                        <AlertTriangle className="h-4 w-4 mr-1" />
-                        Conflicts {conflicts.length > 0 && `(${conflicts.length})`}
-                      </div>
-                    </button>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>1</span>
+                      <span>2</span>
+                      <span>3</span>
+                      <span>4</span>
+                      <span>5</span>
+                    </div>
                   </div>
                   
-                  <div className="mt-4">
-                    {activeTab === 'classes' && (
-                      <>
-                        <div className="mb-3 flex flex-wrap gap-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-charcoal">
-                            Total: {classStats.total}
+                  {conflicts.length > 0 && (
+                    <div className="mb-4 p-3 bg-coral/10 border border-coral/20 rounded-md">
+                      <h3 className="text-sm font-medium text-charcoal mb-1">Conflict Summary:</h3>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-coral/20 text-charcoal">
+                          Total: {conflictStats.total}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          conflictStats.backToBack > 0 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          Back-to-back: {conflictStats.backToBack}
+                        </span>
+                        {conflictStats.byGap.filter(s => s.gap > 0).map(stat => (
+                          <span 
+                            key={stat.gap} 
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-coral/20 text-charcoal"
+                          >
+                            {stat.gap} gap: {stat.count}
                           </span>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            In Show: {classStats.inShow}
-                          </span>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-coral/20 text-charcoal">
-                            Not in Show: {classStats.notInShow}
-                          </span>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-taupe/20 text-charcoal">
-                            Locked: {classStats.locked}
-                          </span>
-                        </div>
-                        <ClassList
-                          classes={classes}
-                          onToggleIncluded={handleToggleIncluded}
-                          onDuplicateClass={handleDuplicateClass}
-                          onDeleteClass={handleDeleteClass}
-                          onUpdateTitle={handleUpdateTitle}
-                          conflicts={conflicts}
-                        />
-                      </>
-                    )}
-                    {activeTab === 'students' && (
-                      <StudentList students={students} />
-                    )}
-                    {activeTab === 'conflicts' && (
-                      <ConflictList
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {students.length > 0 && classes.length > 0 && (
+                    <div className="mb-4">
+                      <ExportButtons 
+                        classes={classes}
+                        students={students}
                         conflicts={conflicts}
                         minGap={minGap}
-                        classes={includedClasses}
+                        showInfo={showInfo}
+                        showInSettings={true}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="flex space-x-1 border-b border-gray-200">
+                      <button
+                        className={`px-4 py-2 text-sm font-medium ${
+                          activeTab === 'classes'
+                            ? 'border-b-2 border-coral text-coral'
+                            : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                        onClick={() => setActiveTab('classes')}
+                      >
+                        <div className="flex items-center">
+                          <Music className="h-4 w-4 mr-1" />
+                          Classes
+                        </div>
+                      </button>
+                      <button
+                        className={`px-4 py-2 text-sm font-medium ${
+                          activeTab === 'students'
+                            ? 'border-b-2 border-coral text-coral'
+                            : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                        onClick={() => setActiveTab('students')}
+                      >
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-1" />
+                          Performers
+                        </div>
+                      </button>
+                      <button
+                        className={`px-4 py-2 text-sm font-medium ${
+                          activeTab === 'conflicts'
+                            ? 'border-b-2 border-coral text-coral'
+                            : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                        onClick={() => setActiveTab('conflicts')}
+                      >
+                        <div className="flex items-center">
+                          <AlertTriangle className="h-4 w-4 mr-1" />
+                          Conflicts {conflicts.length > 0 && `(${conflicts.length})`}
+                        </div>
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4">
+                      {activeTab === 'classes' && (
+                        <>
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-charcoal">
+                              Total: {classStats.total}
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              In Show: {classStats.inShow}
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-coral/20 text-charcoal">
+                              Not in Show: {classStats.notInShow}
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-taupe/20 text-charcoal">
+                              Locked: {classStats.locked}
+                            </span>
+                          </div>
+                          <ClassList
+                            classes={classes}
+                            onToggleIncluded={handleToggleIncluded}
+                            onDuplicateClass={handleDuplicateClass}
+                            onDeleteClass={handleDeleteClass}
+                            onUpdateTitle={handleUpdateTitle}
+                            conflicts={conflicts}
+                          />
+                        </>
+                      )}
+                      {activeTab === 'students' && (
+                        <StudentList students={students} />
+                      )}
+                      {activeTab === 'conflicts' && (
+                        <ConflictList
+                          conflicts={conflicts}
+                          minGap={minGap}
+                          classes={includedClasses}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-lg shadow p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <List className="h-5 w-5 text-gray-500 mr-2" />
+                      <h2 className="text-lg font-medium text-charcoal">Show Order</h2>
+                    </div>
+                    {students.length > 0 && classes.length > 0 && (
+                      <ExportButtons 
+                        classes={classes}
+                        students={students}
+                        conflicts={conflicts}
+                        minGap={minGap}
+                        showInfo={showInfo}
+                        showInSettings={false}
                       />
                     )}
                   </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <List className="h-5 w-5 text-gray-500 mr-2" />
-                    <h2 className="text-lg font-medium text-charcoal">Show Order</h2>
-                  </div>
-                  {students.length > 0 && classes.length > 0 && (
-                    <ExportButtons 
-                      classes={classes}
-                      students={students}
-                      conflicts={conflicts}
-                      minGap={minGap}
-                      showInfo={showInfo}
-                      showInSettings={false}
-                    />
-                  )}
-                </div>
-                <ShowOrder 
-                  classes={classes.filter(c => c.included)} 
-                  onToggleLocked={handleToggleLocked}
-                  onUpdatePosition={handleUpdatePosition}
-                  onUpdateTitle={handleUpdateTitle}
-                  conflicts={conflicts}
-                />
-              </div>
-              
-              {conflicts.length > 0 && (
-                <div className="mt-6">
-                  <ConflictList 
-                    conflicts={conflicts} 
-                    minGap={minGap} 
-                    classes={includedClasses}
+                  <ShowOrder 
+                    classes={classes.filter(c => c.included)} 
+                    onToggleLocked={handleToggleLocked}
+                    onUpdatePosition={handleUpdatePosition}
+                    onUpdateTitle={handleUpdateTitle}
+                    conflicts={conflicts}
                   />
                 </div>
-              )}
+                
+                {conflicts.length > 0 && (
+                  <div className="mt-6">
+                    <ConflictList 
+                      conflicts={conflicts} 
+                      minGap={minGap} 
+                      classes={includedClasses}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+        </main>
+        
+        {showInfoOpen && (
+          <ShowInfoForm
+            showInfo={showInfo}
+            onSave={handleShowInfoUpdate}
+            onCancel={() => setShowInfoOpen(false)}
+          />
         )}
-      </main>
-      
-      {showInfoOpen && (
-        <ShowInfoForm
-          showInfo={showInfo}
-          onSave={handleShowInfoUpdate}
-          onCancel={() => setShowInfoOpen(false)}
-        />
-      )}
-    </div>
+      </div>
+    </AuthWrapper>
   );
 }
 
