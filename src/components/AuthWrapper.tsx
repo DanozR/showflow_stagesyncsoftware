@@ -12,7 +12,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const isDevelopment = process.env.NODE_ENV === 'development' || 
+    const isDevelopment = import.meta.env.DEV || 
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1' ||
       window.location.hostname === 'bolt.new' || 

@@ -1,18 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Check if we're in development mode
-const isDevelopment = process.env.NODE_ENV === 'development' || 
+const isDevelopment = import.meta.env.DEV || 
   window.location.hostname === 'localhost' ||
   window.location.hostname === '127.0.0.1' ||
   window.location.hostname === 'bolt.new' || 
   window.location.hostname.endsWith('.bolt.new') ||
   window.location.hostname.includes('stackblitz.io') ||
   window.location.hostname.includes('webcontainer.io');
-
-// Log environment variables for debugging
-console.log('Auth - Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-console.log('Auth - Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY);
-console.log('Auth - Dashboard URL:', import.meta.env.VITE_DASHBOARD_URL);
 
 // Create Supabase clients
 const appSupabase = createClient(
