@@ -29,13 +29,19 @@ function App() {
 
   // Calculate time saved
   const calculateTimeSaved = () => {
-    const totalStudents = classes
+    // Get unique performers from included classes
+    const uniquePerformers = new Set<string>();
+    classes
       .filter(c => c.included)
-      .reduce((sum, c) => sum + c.students.length, 0);
+      .forEach(c => {
+        c.students.forEach(student => {
+          uniquePerformers.add(student.id);
+        });
+      });
     
     // 5 minutes and 17 seconds per student = 317 seconds
     const secondsPerStudent = 317;
-    const totalSecondsSaved = totalStudents * secondsPerStudent;
+    const totalSecondsSaved = uniquePerformers.size * secondsPerStudent;
     
     const hours = Math.floor(totalSecondsSaved / 3600);
     const minutes = Math.floor((totalSecondsSaved % 3600) / 60);
@@ -43,7 +49,7 @@ function App() {
     return {
       hours,
       minutes,
-      totalStudents
+      totalStudents: uniquePerformers.size
     };
   };
 
@@ -828,7 +834,7 @@ function App() {
                             ? 'border-b-2 border-coral text-coral'
                             : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
-                        onClick={() => setActiveTab('conflicts')}
+                        onClick={()=> setActiveTab('conflicts')}
                       >
                         <div className="flex items-center">
                           <AlertTriangle className="h-4 w-4 mr-1" />

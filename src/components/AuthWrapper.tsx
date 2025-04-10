@@ -53,7 +53,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-charcoal mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-4">
-            Please launch ShowFlow from your Stage Sync Software dashboard.
+            Please launch ShowFlow from your StageSync Software dashboard and ensure you have an active subscription to ShowFlow.
           </p>
           <a
             href="https://app.stagesyncsoftware.com"
