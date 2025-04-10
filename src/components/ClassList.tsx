@@ -1,28 +1,38 @@
 import React, { useState } from 'react';
-import { DanceClass, Conflict } from '../types';
-import { ChevronDown, ChevronUp, Users, Copy, Trash2, Edit } from 'lucide-react';
+import { DanceClass, Conflict, Student } from '../types';
+import { ChevronDown, ChevronUp, Users, Copy, Trash2, Edit, UserPlus, Plus } from 'lucide-react';
+import CreateClassForm from './CreateClassForm';
+import EditClassStudentsForm from './EditClassStudentsForm';
 
 interface ClassListProps {
   classes: DanceClass[];
+  students: Student[];
   onToggleIncluded: (className: string) => void;
   onDuplicateClass?: (className: string) => void;
   onDeleteClass?: (className: string) => void;
   onUpdateTitle?: (className: string, title: string) => void;
+  onCreateClass?: (className: string, selectedStudents: Student[]) => void;
+  onUpdateClassStudents?: (className: string, selectedStudents: Student[]) => void;
   conflicts: Conflict[];
 }
 
 const ClassList: React.FC<ClassListProps> = ({
   classes,
+  students,
   onToggleIncluded,
   onDuplicateClass,
   onDeleteClass,
   onUpdateTitle,
+  onCreateClass,
+  onUpdateClassStudents,
   conflicts
 }) => {
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [titleInput, setTitleInput] = useState<string>('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingStudentsForClass, setEditingStudentsForClass] = useState<string | null>(null);
 
   const toggleExpand = (className: string) => {
     setExpandedClasses(prev => {
@@ -75,6 +85,24 @@ const ClassList: React.FC<ClassListProps> = ({
     }
   };
 
+  const handleCreateClass = (className: string, selectedStudents: Student[]) => {
+    if (onCreateClass) {
+      onCreateClass(className, selectedStudents);
+    }
+    setShowCreateForm(false);
+  };
+
+  const handleEditStudents = (className: string) => {
+    setEditingStudentsForClass(className);
+  };
+
+  const handleSaveStudents = (className: string, selectedStudents: Student[]) => {
+    if (onUpdateClassStudents) {
+      onUpdateClassStudents(className, selectedStudents);
+    }
+    setEditingStudentsForClass(null);
+  };
+
   // Get student IDs with conflicts
   const studentsWithConflicts = new Set(conflicts.map(c => c.studentId));
 
@@ -82,7 +110,15 @@ const ClassList: React.FC<ClassListProps> = ({
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
         <h3 className="text-sm font-medium text-gray-700">Class List</h3>
-        <div className="text-xs text-gray-500">Click Yes/No to include in show</div>
+        {onCreateClass && (
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add Class
+          </button>
+        )}
       </div>
       <ul className="divide-y divide-gray-200">
         {classes.map((danceClass) => (
@@ -129,6 +165,15 @@ const ClassList: React.FC<ClassListProps> = ({
                       title="Edit performance title"
                     >
                       <Edit size={16} />
+                    </button>
+                  )}
+                  {onUpdateClassStudents && (
+                    <button
+                      onClick={() => handleEditStudents(danceClass.name)}
+                      className="text-blue-500 hover:text-blue-700"
+                      title="Edit students"
+                    >
+                      <UserPlus size={16} />
                     </button>
                   )}
                   {onDuplicateClass && (
@@ -250,6 +295,23 @@ const ClassList: React.FC<ClassListProps> = ({
           </li>
         ))}
       </ul>
+
+      {showCreateForm && (
+        <CreateClassForm
+          students={students}
+          onSave={handleCreateClass}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      )}
+
+      {editingStudentsForClass && (
+        <EditClassStudentsForm
+          danceClass={classes.find(c => c.name === editingStudentsForClass)!}
+          allStudents={students}
+          onSave={handleSaveStudents}
+          onCancel={() => setEditingStudentsForClass(null)}
+        />
+      )}
     </div>
   );
 };

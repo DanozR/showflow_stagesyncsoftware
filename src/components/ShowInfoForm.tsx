@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ShowInfo } from '../types';
 import { X } from 'lucide-react';
+import TimePicker from 'react-time-picker';
+import 'react-time-picker/dist/TimePicker.css';
 
 interface ShowInfoFormProps {
   showInfo: ShowInfo;
@@ -16,9 +18,36 @@ const ShowInfoForm: React.FC<ShowInfoFormProps> = ({ showInfo, onSave, onCancel 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleTimeChange = (value: string | null) => {
+    if (!value) return;
+
+    // Convert the time to 12-hour format with AM/PM
+    const [hours, minutes] = value.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    const time12 = `${hour12}:${minutes} ${ampm}`;
+    
+    setFormData(prev => ({ ...prev, time: time12 }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
+  };
+
+  // Convert 12-hour time to 24-hour for TimePicker
+  const getTime24 = (time12: string): string => {
+    if (!time12) return '';
+    
+    const [timeStr, period] = time12.split(' ');
+    const [hours, minutes] = timeStr.split(':');
+    let hour = parseInt(hours, 10);
+    
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    
+    return `${hour.toString().padStart(2, '0')}:${minutes}`;
   };
 
   return (
@@ -71,13 +100,13 @@ const ShowInfoForm: React.FC<ShowInfoFormProps> = ({ showInfo, onSave, onCancel 
               <label htmlFor="time" className="block text-sm font-medium text-gray-700">
                 Performance Time
               </label>
-              <input
-                type="time"
-                name="time"
-                id="time"
-                value={formData.time}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              <TimePicker
+                value={getTime24(formData.time)}
+                onChange={handleTimeChange}
+                format="h:mm a"
+                disableClock={true}
+                clearIcon={null}
+                className="mt-1 block w-full"
               />
             </div>
             

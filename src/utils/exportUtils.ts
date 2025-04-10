@@ -18,11 +18,10 @@ const formatDate = (dateStr: string): string => {
   if (!dateStr) return '';
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
     });
   } catch (e) {
     return dateStr;
@@ -32,6 +31,12 @@ const formatDate = (dateStr: string): string => {
 // Format time for display
 const formatTime = (timeStr: string): string => {
   if (!timeStr) return '';
+  
+  // If time is already in 12-hour format
+  if (timeStr.includes('AM') || timeStr.includes('PM')) {
+    return timeStr;
+  }
+  
   try {
     // Convert 24-hour time to 12-hour format
     const [hours, minutes] = timeStr.split(':');
@@ -127,7 +132,7 @@ export const exportSimplifiedPDF = (
     doc.setFontSize(9);
     doc.setTextColor(128, 128, 128); // Gray text
     doc.text(
-      `Generated ${new Date().toLocaleDateString()}`,
+      `Generated ${formatDate(new Date().toISOString().split('T')[0])}`,
       doc.internal.pageSize.width / 2,
       yPos,
       { align: 'center' }
@@ -240,14 +245,14 @@ export const exportToPDF = (
       
       // Add generation date
       doc.setFontSize(10);
-      doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, yPos);
+      doc.text(`Generated on ${formatDate(new Date().toISOString().split('T')[0])}`, 14, yPos);
       
       // Adjust the starting Y position based on how much show info we have
       startY = yPos + 15; // Add extra space after the show info
     } else {
       // Add date if no show info
       doc.setFontSize(10);
-      doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 28);
+      doc.text(`Generated on ${formatDate(new Date().toISOString().split('T')[0])}`, 14, 28);
     }
     
     // Filter and sort classes for the show
@@ -427,10 +432,10 @@ export const exportToCSV = (
     
     cls.students.forEach(student => {
       csvData.push({
-        export_date: new Date().toISOString().split('T')[0],
+        export_date: formatDate(new Date().toISOString().split('T')[0]),
         show_name: showInfo?.name || '',
-        date: showInfo?.date || '',
-        time: showInfo?.time || '',
+        date: showInfo?.date ? formatDate(showInfo.date) : '',
+        time: showInfo?.time ? formatTime(showInfo.time) : '',
         location: showInfo?.location || '',
         performance_number: performanceNumber,
         class_name: cls.name,

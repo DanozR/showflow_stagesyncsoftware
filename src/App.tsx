@@ -10,7 +10,7 @@ import ExportButtons from './components/ExportButtons';
 import ShowInfoForm from './components/ShowInfoForm';
 import { buildClassesFromStudents } from './utils/showOptimizer';
 import { optimizeShowOrder, terminateWorker } from './utils/optimizerService';
-import { Music, Users, AlertTriangle, List, RefreshCw, Info } from 'lucide-react';
+import { Music, Users, AlertTriangle, List, RefreshCw, Info, Clock, Plus } from 'lucide-react';
 
 function App() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -23,9 +23,65 @@ function App() {
   const [showInfo, setShowInfo] = useState<ShowInfo>({
     name: 'Dance Recital',
     date: new Date().toISOString().split('T')[0],
-    time: '19:00',
+    time: '7:00 PM',
     location: 'Main Auditorium'
   });
+
+  // Calculate time saved
+  const calculateTimeSaved = () => {
+    const totalStudents = classes
+      .filter(c => c.included)
+      .reduce((sum, c) => sum + c.students.length, 0);
+    
+    // 5 minutes and 17 seconds per student = 317 seconds
+    const secondsPerStudent = 317;
+    const totalSecondsSaved = totalStudents * secondsPerStudent;
+    
+    const hours = Math.floor(totalSecondsSaved / 3600);
+    const minutes = Math.floor((totalSecondsSaved % 3600) / 60);
+    
+    return {
+      hours,
+      minutes,
+      totalStudents
+    };
+  };
+
+  // Format date for display
+  const formatDate = (dateStr: string): string => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
+  // Format time for display
+  const formatTime = (timeStr: string): string => {
+    if (!timeStr) return '';
+    
+    // If time is already in 12-hour format
+    if (timeStr.includes('AM') || timeStr.includes('PM')) {
+      return timeStr;
+    }
+    
+    try {
+      // Convert 24-hour time to 12-hour format
+      const [hours, minutes] = timeStr.split(':');
+      const hour = parseInt(hours, 10);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour % 12 || 12;
+      return `${hour12}:${minutes} ${ampm}`;
+    } catch (e) {
+      return timeStr;
+    }
+  };
 
   // Clean up worker on unmount
   useEffect(() => {
@@ -98,6 +154,7 @@ function App() {
         counter++;
         newName = `${originalClass.name} (Copy ${counter})`;
       }
+      
       
       const duplicatedClass: DanceClass = {
         ...originalClass,
@@ -185,6 +242,102 @@ function App() {
                     ...c,
                     position: orderedClass.position,
                     locked: c.locked // Preserve locked state
+                  };
+                }
+                return c;
+              });
+            });
+            
+            setConflicts(conflicts);
+            setIsOptimizing(false);
+          })
+          .catch(error => {
+            console.error("Optimization error:", error);
+            setIsOptimizing(false);
+          });
+        
+        return prevClasses;
+      });
+    }, 0);
+  };
+
+  const handleCreateClass = (className: string, selectedStudents: Student[]) => {
+    setClasses(prevClasses => {
+      const newClass: DanceClass = {
+        name: className,
+        students: selectedStudents,
+        position: null,
+        locked: false,
+        included: true,
+        title: ''
+      };
+      return [...prevClasses, newClass];
+    });
+
+    // Trigger optimization after state update
+    setTimeout(() => {
+      setIsOptimizing(true);
+      
+      setClasses(prevClasses => {
+        const includedClasses = prevClasses.filter(c => c.included);
+        
+        optimizeShowOrder(includedClasses, minGap)
+          .then(({ orderedClasses, conflicts }) => {
+            setClasses(latestClasses => {
+              return latestClasses.map(c => {
+                if (!c.included) return c;
+                
+                const orderedClass = orderedClasses.find(oc => oc.name === c.name);
+                if (orderedClass) {
+                  return {
+                    ...c,
+                    position: orderedClass.position,
+                    locked: c.locked
+                  };
+                }
+                return c;
+              });
+            });
+            
+            setConflicts(conflicts);
+            setIsOptimizing(false);
+          })
+          .catch(error => {
+            console.error("Optimization error:", error);
+            setIsOptimizing(false);
+          });
+        
+        return prevClasses;
+      });
+    }, 0);
+  };
+
+  const handleUpdateClassStudents = (className: string, selectedStudents: Student[]) => {
+    setClasses(prevClasses => {
+      return prevClasses.map(c => 
+        c.name === className ? { ...c, students: selectedStudents } : c
+      );
+    });
+
+    // Trigger optimization after state update
+    setTimeout(() => {
+      setIsOptimizing(true);
+      
+      setClasses(prevClasses => {
+        const includedClasses = prevClasses.filter(c => c.included);
+        
+        optimizeShowOrder(includedClasses, minGap)
+          .then(({ orderedClasses, conflicts }) => {
+            setClasses(latestClasses => {
+              return latestClasses.map(c => {
+                if (!c.included) return c;
+                
+                const orderedClass = orderedClasses.find(oc => oc.name === c.name);
+                if (orderedClass) {
+                  return {
+                    ...c,
+                    position: orderedClass.position,
+                    locked: c.locked
                   };
                 }
                 return c;
@@ -491,19 +644,37 @@ function App() {
   // Get included classes for passing to ConflictList
   const includedClasses = classes.filter(c => c.included);
 
+  // Calculate time saved
+  const { hours, minutes, totalStudents } = calculateTimeSaved();
+
   return (
     <AuthWrapper>
       <div className="min-h-screen bg-gray-100">
         <header className="bg-white shadow">
           <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex flex-col space-y-4">
-              {/* Logo */}
+              {/* Logo and Time Saved */}
               <div className="flex items-center justify-between">
-                <img 
-                  src="https://i.imgur.com/o5iWGOq.png" 
-                  alt="ShowFlow" 
-                  className="h-20"
-                />
+                <div className="flex items-center space-x-8">
+                  <img 
+                    src="https://i.imgur.com/o5iWGOq.png" 
+                    alt="ShowFlow" 
+                    className="h-16"
+                  />
+                  {totalStudents > 0 && (
+                    <div className="flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-lg">
+                      <Clock className="h-5 w-5 text-green-600" />
+                      <div>
+                        <div className="text-lg font-semibold text-green-700">
+                          {hours}h {minutes}m
+                        </div>
+                        <div className="text-sm text-green-600">
+                          Time saved using ShowFlow
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={() => setShowInfoOpen(true)}
                   className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-charcoal bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
@@ -517,7 +688,7 @@ function App() {
               <div className="border-t border-gray-200 pt-4">
                 <h2 className="text-2xl font-semibold text-charcoal">{showInfo.name}</h2>
                 <div className="mt-1 text-sm text-gray-600">
-                  {showInfo.date && new Date(showInfo.date).toLocaleDateString()} {showInfo.time && `at ${showInfo.time}`}
+                  {showInfo.date && formatDate(showInfo.date)} {showInfo.time && `at ${formatTime(showInfo.time)}`}
                   {showInfo.location && ` • ${showInfo.location}`}
                 </div>
               </div>
@@ -685,10 +856,13 @@ function App() {
                           </div>
                           <ClassList
                             classes={classes}
+                            students={students}
                             onToggleIncluded={handleToggleIncluded}
                             onDuplicateClass={handleDuplicateClass}
                             onDeleteClass={handleDeleteClass}
                             onUpdateTitle={handleUpdateTitle}
+                            onCreateClass={handleCreateClass}
+                            onUpdateClassStudents={handleUpdateClassStudents}
                             conflicts={conflicts}
                           />
                         </>
