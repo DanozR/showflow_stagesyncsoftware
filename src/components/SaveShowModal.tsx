@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import { ShowInfo } from '../types';
-import { handleError } from '../utils/errorHandling';
 
 interface SaveShowModalProps {
   showInfo: ShowInfo;
@@ -27,24 +26,20 @@ const SaveShowModal: React.FC<SaveShowModalProps> = ({ showInfo, onSave, onCance
 
       setIsChecking(true);
       try {
-        // Get current user
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError) throw authError;
-        if (!user) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.id) {
           setError('You must be logged in to save shows');
           return;
         }
 
-        // Check for existing show with same name
         const { data: existingShow, error: queryError } = await supabase
           .from('shows')
           .select('id')
           .eq('user_id', user.id)
           .eq('show_name', showName.trim())
-          .maybeSingle();
+          .single();
 
-        if (queryError) throw queryError;
+        if (queryError && queryError.code !== 'PGRST116') throw queryError;
 
         if (existingShow && (!showInfo.show_id || existingShow.id !== showInfo.show_id)) {
           setError('A show with this name already exists');
@@ -52,7 +47,7 @@ const SaveShowModal: React.FC<SaveShowModalProps> = ({ showInfo, onSave, onCance
           setError(null);
         }
       } catch (err) {
-        handleError(err, 'Error checking show name');
+        console.error('Error checking show name:', err);
         setError('Error checking show name');
       } finally {
         setIsChecking(false);
@@ -80,17 +75,13 @@ const SaveShowModal: React.FC<SaveShowModalProps> = ({ showInfo, onSave, onCance
 
     setIsSaving(true);
     try {
-      // Get current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError) throw authError;
-      if (!user) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) {
         throw new Error('You must be logged in to save shows');
       }
-
       onSave(showName.trim());
     } catch (err) {
-      handleError(err, 'Error saving show');
+      console.error('Error saving show:', err);
       setError('Error saving show');
     } finally {
       setIsSaving(false);

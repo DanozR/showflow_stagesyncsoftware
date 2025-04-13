@@ -1,9 +1,14 @@
-[[plugins]]
-  package = "@netlify/plugin-sitemap"
-
 [build]
   command = "npm run build"
   publish = "dist"
 
 [build.environment]
-  SECRETS_SCAN_OMIT_PATHS = "dist/assets/supabase-*.js"
+  NODE_VERSION = "20"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
