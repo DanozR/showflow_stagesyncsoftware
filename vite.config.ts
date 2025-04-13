@@ -27,10 +27,6 @@ export default defineConfig(({ mode }) => {
             }
           }
         }
-      },
-      // Replace sensitive environment variables with empty strings in production
-      define: {
-        'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('')
       }
     }
   };

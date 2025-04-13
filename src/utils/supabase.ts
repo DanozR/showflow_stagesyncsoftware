@@ -1,25 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Get environment variables from Vite's import.meta.env
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// In production, the anon key will be injected at runtime
-const getAnonKey = () => {
-  if (import.meta.env.PROD) {
-    // Get the key from a meta tag that will be injected by the server
-    const metaTag = document.querySelector('meta[name="supabase-anon-key"]');
-    return metaTag?.getAttribute('content') || '';
-  }
-  return supabaseAnonKey;
+// Get environment variables from meta tags
+const getMetaContent = (name: string): string => {
+  const meta = document.querySelector(`meta[name="${name}"]`);
+  return meta?.getAttribute('content') || '';
 };
 
+const supabaseUrl = getMetaContent('supabase-url');
+const supabaseAnonKey = getMetaContent('supabase-anon-key');
+
 if (!supabaseUrl) {
-  throw new Error('Missing Supabase URL environment variable');
+  throw new Error('Missing Supabase URL');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('Missing Supabase anon key');
 }
 
 // Create a single instance of the Supabase client
-export const supabase = createClient(supabaseUrl, getAnonKey(), {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
