@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig(({ mode }) => {
+  // Load env file based on mode
   const env = loadEnv(mode, process.cwd(), '');
+  
   return {
     plugins: [react()],
     server: {
@@ -19,12 +21,16 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            // Put environment variables in a separate chunk
-            if (id.includes('supabase.ts')) {
+            // Create a separate chunk for Supabase-related code
+            if (id.includes('@supabase/supabase-js')) {
               return 'supabase';
             }
           }
         }
+      },
+      // Replace sensitive environment variables with empty strings in production
+      define: {
+        'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('')
       }
     }
   };
