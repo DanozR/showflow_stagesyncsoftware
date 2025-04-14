@@ -79,7 +79,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             Please launch ShowFlow from your StageSync Software dashboard and ensure you have an active subscription to ShowFlow.
           </p>
           <a
-            href="https://app.stagesyncsoftware.com"
+            href={import.meta.env.VITE_DASHBOARD_URL}
             className="inline-block px-4 py-2 bg-coral text-white rounded-md hover:bg-coral/90 transition-colors"
           >
             Go to Dashboard
