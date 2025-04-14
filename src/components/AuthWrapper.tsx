@@ -22,13 +22,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       }
 
       try {
-        // First verify the session
-        const session = await getSession();
-        if (!session?.user) {
-          throw new Error('Invalid session');
-        }
-
-        // Then verify subscription
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
         
@@ -36,6 +29,13 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           throw new Error('No access token provided');
         }
 
+        // First verify the session
+        const session = await getSession();
+        if (!session?.user) {
+          throw new Error('Invalid session');
+        }
+
+        // Then verify subscription
         const isValid = await checkUserSubscription(token);
         if (!isValid) {
           throw new Error('Invalid or expired subscription');
