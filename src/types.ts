@@ -11,7 +11,7 @@ export interface DanceClass {
   position: number | null;
   locked: boolean;
   included: boolean;
-  title?: string;
+  title?: string; // Optional title for the performance
 }
 
 export interface Conflict {
@@ -26,27 +26,4 @@ export interface ShowInfo {
   date: string;
   time: string;
   location: string;
-  show_id?: string;
-  show_name?: string;
-  version?: number;
-}
-
-export interface SavedShow {
-  id: string;
-  show_name: string;
-  name: string;
-  date: string;
-  time: string;
-  location: string;
-  version: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ShowData {
-  showInfo: ShowInfo;
-  students: Student[];
-  classes: DanceClass[];
-  conflicts: Conflict[];
-  minGap: number;
 }

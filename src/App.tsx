@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Student, DanceClass, Conflict, ShowInfo } from './types';
 import { AuthWrapper } from './components/AuthWrapper';
 import FileUpload from './components/FileUpload';
@@ -8,17 +8,12 @@ import ConflictList from './components/ConflictList';
 import StudentList from './components/StudentList';
 import ExportButtons from './components/ExportButtons';
 import ShowInfoForm from './components/ShowInfoForm';
-import SaveShowModal from './components/SaveShowModal';
-import LoadShowsModal from './components/LoadShowsModal';
-import ShowVersionsModal from './components/ShowVersionsModal';
-import AutosaveIndicator from './components/AutosaveIndicator';
-import { Toast } from './components/Toast';
+import SaveShowDialog from './components/SaveShowDialog';
+import ShowList from './components/ShowList';
 import { buildClassesFromStudents } from './utils/showOptimizer';
 import { optimizeShowOrder, terminateWorker } from './utils/optimizerService';
-import { ShowService } from './services/showService';
-import { debounce } from './utils/debounce';
-import { handleError, showSuccess } from './utils/errorHandling';
-import { Music, Users, AlertTriangle, List, RefreshCw, Info, Clock, Plus, Save, FolderOpen, History } from 'lucide-react';
+import { SavedShow } from './utils/showService';
+import { Music, Users, AlertTriangle, List, RefreshCw, Info, Clock, Plus, Save, FolderOpen } from 'lucide-react';
 
 function App() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -28,115 +23,14 @@ function App() {
   const [activeTab, setActiveTab] = useState<'classes' | 'students' | 'conflicts'>('classes');
   const [isOptimizing, setIsOptimizing] = useState<boolean>(false);
   const [showInfoOpen, setShowInfoOpen] = useState<boolean>(false);
+  const [saveShowOpen, setSaveShowOpen] = useState<boolean>(false);
+  const [showListOpen, setShowListOpen] = useState<boolean>(false);
   const [showInfo, setShowInfo] = useState<ShowInfo>({
     name: 'Dance Recital',
     date: new Date().toISOString().split('T')[0],
     time: '7:00 PM',
-    location: 'Main Auditorium',
-    version: 1
+    location: 'Main Auditorium'
   });
-  const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [loadShowsModalOpen, setLoadShowsModalOpen] = useState(false);
-  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
-  const [autosaveStatus, setAutosaveStatus] = useState<'saving' | 'saved' | 'error'>('saved');
-  const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined);
-  const [autosaveError, setAutosaveError] = useState<string | undefined>(undefined);
-
-  // Create a debounced autosave function
-  const autosaveShow = useMemo(
-    () =>
-      debounce(async () => {
-        if (!showInfo.show_name) return;
-
-        setAutosaveStatus('saving');
-        try {
-          const showData = {
-            showInfo,
-            students,
-            classes,
-            conflicts,
-            minGap
-          };
-
-          await ShowService.saveShow(showData, showInfo.show_name);
-          setAutosaveStatus('saved');
-          setLastSaved(new Date());
-          setAutosaveError(undefined);
-          showSuccess('Show autosaved successfully');
-        } catch (error) {
-          console.error('Autosave error:', error);
-          setAutosaveStatus('error');
-          setAutosaveError('Failed to autosave');
-          handleError(error);
-        }
-      }, 30000),
-    [showInfo, students, classes, conflicts, minGap]
-  );
-
-  // Trigger autosave when show data changes
-  useEffect(() => {
-    if (showInfo.show_name) {
-      autosaveShow();
-    }
-  }, [showInfo, students, classes, conflicts, minGap]);
-
-  // Handle saving show
-  const handleSaveShow = async (showName: string) => {
-    try {
-      const showData = {
-        showInfo: { ...showInfo, show_name: showName },
-        students,
-        classes,
-        conflicts,
-        minGap
-      };
-
-      const showId = await ShowService.saveShow(showData, showName);
-      setShowInfo(prev => ({
-        ...prev,
-        show_id: showId,
-        show_name: showName
-      }));
-      setSaveModalOpen(false);
-      showSuccess('Show saved successfully');
-    } catch (error) {
-      handleError(error, 'Failed to save show');
-    }
-  };
-
-  // Handle loading show
-  const handleLoadShow = async (showId: string) => {
-    try {
-      const showData = await ShowService.loadShow(showId);
-      setShowInfo(showData.showInfo);
-      setStudents(showData.students);
-      setClasses(showData.classes);
-      setConflicts(showData.conflicts);
-      setMinGap(showData.minGap);
-      setLoadShowsModalOpen(false);
-      showSuccess('Show loaded successfully');
-    } catch (error) {
-      handleError(error, 'Failed to load show');
-    }
-  };
-
-  // Handle loading version
-  const handleLoadVersion = async (version: number) => {
-    if (!showInfo.show_id) return;
-
-    try {
-      const showData = await ShowService.getShowVersion(showInfo.show_id, version);
-      setShowInfo(showData.showInfo);
-      setStudents(showData.students);
-      setClasses(showData.classes);
-      setConflicts(showData.conflicts);
-      setMinGap(showData.minGap);
-      setVersionHistoryOpen(false);
-      showSuccess(`Version ${version} loaded successfully`);
-    } catch (error) {
-      handleError(error, 'Failed to load version');
-    }
-  };
 
   // Calculate time saved
   const calculateTimeSaved = () => {
@@ -739,6 +633,23 @@ function App() {
     setShowInfoOpen(false);
   };
 
+  const handleSaveShow = () => {
+    setSaveShowOpen(true);
+  };
+
+  const handleSaveComplete = () => {
+    setSaveShowOpen(false);
+  };
+
+  const handleLoadShow = (savedShow: SavedShow) => {
+    const { data } = savedShow;
+    setStudents(data.students);
+    setClasses(data.classes);
+    setConflicts(data.conflicts);
+    setShowInfo(data.showInfo);
+    setShowListOpen(false);
+  };
+
   // Calculate class statistics
   const classStats = {
     total: classes.length,
@@ -791,63 +702,36 @@ function App() {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center space-x-4">
-                  {showInfo.show_name && (
-                    <AutosaveIndicator
-                      status={autosaveStatus}
-                      lastSaved={lastSaved}
-                      error={autosaveError}
-                    />
-                  )}
-                  <div className="flex space-x-2">
+                <div className="flex items-center space-x-2">
+                  {students.length > 0 && (
                     <button
-                      onClick={() => setSaveModalOpen(true)}
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-charcoal bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
+                      onClick={handleSaveShow}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-coral hover:bg-coral/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
                     >
                       <Save className="h-4 w-4 mr-1" />
-                      Save
+                      Save Show
                     </button>
-                    <button
-                      onClick={() => setLoadShowsModalOpen(true)}
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-charcoal bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
-                    >
-                      <FolderOpen className="h-4 w-4 mr-1" />
-                      Load
-                    </button>
-                    {showInfo.show_id && (
-                      <button
-                        onClick={() => setVersionHistoryOpen(true)}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-charcoal bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
-                      >
-                        <History className="h-4 w-4 mr-1" />
-                        History
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setShowInfoOpen(true)}
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-charcoal bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
-                    >
-                      <Info className="h-4 w-4 mr-1" />
-                      Edit Show Info
-                    </button>
-                  </div>
+                  )}
+                  <button
+                    onClick={() => setShowListOpen(true)}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-taupe hover:bg-taupe/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-taupe"
+                  >
+                    <FolderOpen className="h-4 w-4 mr-1" />
+                    Open Show
+                  </button>
+                  <button
+                    onClick={() => setShowInfoOpen(true)}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-charcoal bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-coral"
+                  >
+                    <Info className="h-4 w-4 mr-1" />
+                    Edit Show Info
+                  </button>
                 </div>
               </div>
               
               {/* Show info */}
               <div className="border-t border-gray-200 pt-4">
-                <h2 className="text-2xl font-semibold text-charcoal">
-                  {showInfo.show_name ? (
-                    <>
-                      {showInfo.show_name}
-                      <span className="ml-2 text-sm font-normal text-gray-500">
-                        ({showInfo.name})
-                      </span>
-                    </>
-                  ) : (
-                    showInfo.name
-                  )}
-                </h2>
+                <h2 className="text-2xl font-semibold text-charcoal">{showInfo.name}</h2>
                 <div className="mt-1 text-sm text-gray-600">
                   {showInfo.date && formatDate(showInfo.date)} {showInfo.time && `at ${formatTime(showInfo.time)}`}
                   {showInfo.location && ` • ${showInfo.location}`}
@@ -989,7 +873,7 @@ function App() {
                             ? 'border-b-2 border-coral text-coral'
                             : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
-                        onClick={()=> setActiveTab('conflicts')}
+                        onClick={() => setActiveTab('conflicts')}
                       >
                         <div className="flex items-center">
                           <AlertTriangle className="h-4 w-4 mr-1" />
@@ -1091,32 +975,24 @@ function App() {
             onCancel={() => setShowInfoOpen(false)}
           />
         )}
-
-        {saveModalOpen && (
-          <SaveShowModal
+        
+        {saveShowOpen && (
+          <SaveShowDialog
+            classes={classes}
+            students={students}
+            conflicts={conflicts}
             showInfo={showInfo}
-            onSave={handleSaveShow}
-            onCancel={() => setSaveModalOpen(false)}
+            onSave={handleSaveComplete}
+            onCancel={() => setSaveShowOpen(false)}
           />
         )}
-
-        {loadShowsModalOpen && (
-          <LoadShowsModal
-            onLoad={handleLoadShow}
-            onCancel={() => setLoadShowsModalOpen(false)}
+        
+        {showListOpen && (
+          <ShowList
+            onLoadShow={handleLoadShow}
+            onClose={() => setShowListOpen(false)}
           />
         )}
-
-        {versionHistoryOpen && showInfo.show_id && (
-          <ShowVersionsModal
-            showId={showInfo.show_id}
-            currentVersion={showInfo.version || 1}
-            onLoadVersion={handleLoadVersion}
-            onCancel={() => setVersionHistoryOpen(false)}
-          />
-        )}
-
-        <Toast />
       </div>
     </AuthWrapper>
   );
