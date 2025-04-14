@@ -7,26 +7,13 @@ if (!supabaseUrl) {
   throw new Error('Missing Supabase URL');
 }
 
-// Get anon key only in development mode
-const getAnonKey = (): string => {
-  if (isDevelopment()) {
-    // In development, use the anon key from .env
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    if (!anonKey) {
-      console.warn('Development mode: Missing Supabase anon key');
-    }
-    return anonKey || '';
-  }
-  // In production, don't use anon key
-  return '';
-};
-
-// Initialize client with anon key only in development
-export const supabase = createClient(supabaseUrl, getAnonKey(), {
+// Initialize client with auth configuration
+export const supabase = createClient(supabaseUrl, '', {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 });
 
