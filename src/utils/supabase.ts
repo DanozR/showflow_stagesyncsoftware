@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { isDevelopment } from './isDevelopment';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -21,19 +20,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 });
 
 export const getAuthToken = async () => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (isDevelopment()) {
-      // In development, return the anon key as the token
-      return supabaseKey;
-    }
-    return session?.access_token;
-  } catch (error) {
-    console.error('Error getting auth token:', error);
-    if (isDevelopment()) {
-      // In development, return the anon key as the token
-      return supabaseKey;
-    }
-    return null;
-  }
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token;
 };
