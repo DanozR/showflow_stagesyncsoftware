@@ -1,6 +1,7 @@
 import React, { useEffect, useState, ReactNode } from 'react';
 import { checkUserSubscription } from '../utils/checkSubscription';
 import { isDevelopment } from '../utils/isDevelopment';
+import { getSession } from '../utils/supabase';
 
 interface AuthWrapperProps {
   children: ReactNode;
@@ -9,6 +10,7 @@ interface AuthWrapperProps {
 export function AuthWrapper({ children }: AuthWrapperProps) {
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyAccess = async () => {
@@ -19,20 +21,30 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         return;
       }
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-
-      if (!token) {
-        setHasAccess(false);
-        setLoading(false);
-        return;
-      }
-
       try {
+        // First verify the session
+        const session = await getSession();
+        if (!session?.user) {
+          throw new Error('Invalid session');
+        }
+
+        // Then verify subscription
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        
+        if (!token) {
+          throw new Error('No access token provided');
+        }
+
         const isValid = await checkUserSubscription(token);
-        setHasAccess(isValid);
+        if (!isValid) {
+          throw new Error('Invalid or expired subscription');
+        }
+
+        setHasAccess(true);
       } catch (error) {
-        console.error('Error verifying access:', error);
+        console.error('Auth error:', error);
+        setError(error instanceof Error ? error.message : 'Authentication failed');
         setHasAccess(false);
       } finally {
         setLoading(false);
@@ -58,6 +70,11 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-charcoal mb-4">Access Denied</h2>
+          {error && (
+            <p className="text-red-600 mb-4">
+              {error}
+            </p>
+          )}
           <p className="text-gray-600 mb-4">
             Please launch ShowFlow from your StageSync Software dashboard and ensure you have an active subscription to ShowFlow.
           </p>
