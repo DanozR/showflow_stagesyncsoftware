@@ -1,5 +1,7 @@
-import { supabase } from './supabase';
 import { DanceClass, Student, Conflict, ShowInfo } from '../types';
+import { getAuthToken } from './supabase';
+
+const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/show-service`;
 
 export interface SavedShow {
   id: string;
@@ -17,6 +19,41 @@ export interface SavedShow {
   updated_at: string;
 }
 
+const callEdgeFunction = async (
+  action: string,
+  method: string,
+  data?: any,
+  queryParams?: Record<string, string>
+) => {
+  const token = await getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const url = new URL(`${EDGE_FUNCTION_URL}/${action}`);
+  if (queryParams) {
+    Object.entries(queryParams).forEach(([key, value]) => {
+      url.searchParams.append(key, value);
+    });
+  }
+
+  const response = await fetch(url.toString(), {
+    method,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'An error occurred');
+  }
+
+  return method === 'DELETE' ? undefined : response.json();
+};
+
 export const saveShow = async (
   showName: string,
   classes: DanceClass[],
@@ -24,37 +61,13 @@ export const saveShow = async (
   conflicts: Conflict[],
   showInfo: ShowInfo
 ): Promise<SavedShow> => {
-  try {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) {
-      throw new Error('No authenticated user');
-    }
-
-    const showData = {
-      classes,
-      students,
-      conflicts,
-      showInfo
-    };
-
-    const { data, error } = await supabase
-      .from('shows')
-      .insert({
-        user_id: user.user.id,
-        show_name: showName,
-        name: showInfo.name,
-        data: showData,
-        version: 1
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as SavedShow;
-  } catch (error) {
-    console.error('Error saving show:', error);
-    throw error;
-  }
+  return callEdgeFunction('save', 'POST', {
+    showName,
+    classes,
+    students,
+    conflicts,
+    showInfo
+  });
 };
 
 export const updateShow = async (
@@ -64,79 +77,23 @@ export const updateShow = async (
   conflicts: Conflict[],
   showInfo: ShowInfo
 ): Promise<SavedShow> => {
-  try {
-    const showData = {
-      classes,
-      students,
-      conflicts,
-      showInfo
-    };
-
-    const { data, error } = await supabase
-      .from('shows')
-      .update({
-        name: showInfo.name,
-        data: showData
-      })
-      .eq('id', showId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as SavedShow;
-  } catch (error) {
-    console.error('Error updating show:', error);
-    throw error;
-  }
+  return callEdgeFunction('update', 'PUT', {
+    showId,
+    classes,
+    students,
+    conflicts,
+    showInfo
+  });
 };
 
 export const loadShow = async (showId: string): Promise<SavedShow> => {
-  try {
-    const { data, error } = await supabase
-      .from('shows')
-      .select()
-      .eq('id', showId)
-      .single();
-
-    if (error) throw error;
-    return data as SavedShow;
-  } catch (error) {
-    console.error('Error loading show:', error);
-    throw error;
-  }
+  return callEdgeFunction('load', 'GET', undefined, { id: showId });
 };
 
 export const listShows = async (): Promise<SavedShow[]> => {
-  try {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) {
-      throw new Error('No authenticated user');
-    }
-
-    const { data, error } = await supabase
-      .from('shows')
-      .select()
-      .eq('user_id', user.user.id)
-      .order('updated_at', { ascending: false });
-
-    if (error) throw error;
-    return data as SavedShow[];
-  } catch (error) {
-    console.error('Error listing shows:', error);
-    throw error;
-  }
+  return callEdgeFunction('list', 'GET');
 };
 
 export const deleteShow = async (showId: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('shows')
-      .delete()
-      .eq('id', showId);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error deleting show:', error);
-    throw error;
-  }
+  return callEdgeFunction('delete', 'DELETE', undefined, { id: showId });
 };
