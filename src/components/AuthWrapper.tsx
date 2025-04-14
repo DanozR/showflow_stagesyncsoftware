@@ -28,9 +28,15 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         return;
       }
 
-      const isValid = await checkUserSubscription(token);
-      setHasAccess(isValid);
-      setLoading(false);
+      try {
+        const isValid = await checkUserSubscription(token);
+        setHasAccess(isValid);
+      } catch (error) {
+        console.error('Error verifying access:', error);
+        setHasAccess(false);
+      } finally {
+        setLoading(false);
+      }
     };
 
     verifyAccess();
