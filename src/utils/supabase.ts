@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { isDevelopment } from './isDevelopment';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -9,11 +8,7 @@ if (!supabaseUrl) {
 }
 
 if (!supabaseKey) {
-  if (isDevelopment()) {
-    console.warn('Missing Supabase anon key in development mode');
-  } else {
-    throw new Error('Missing Supabase anon key');
-  }
+  throw new Error('Missing Supabase anon key');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
