@@ -16,6 +16,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     const verifyAccess = async () => {
       // Always grant access in development mode
       if (isDevelopment()) {
+        console.log('Development mode: granting access');
         setHasAccess(true);
         setLoading(false);
         return;
@@ -29,14 +30,22 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           throw new Error('No access token provided');
         }
 
+        console.log('Starting session verification...'); // Add logging
+
         // First verify the session
         const session = await getSession();
+        console.log('Session verification result:', session); // Add logging
+
         if (!session?.user) {
           throw new Error('Invalid session');
         }
 
+        console.log('Starting subscription check...'); // Add logging
+
         // Then verify subscription
         const isValid = await checkUserSubscription(token);
+        console.log('Subscription check result:', isValid); // Add logging
+
         if (!isValid) {
           throw new Error('Invalid or expired subscription');
         }
@@ -72,7 +81,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           <h2 className="text-2xl font-bold text-charcoal mb-4">Access Denied</h2>
           {error && (
             <p className="text-red-600 mb-4">
-              {error}
+              Error: {error}
             </p>
           )}
           <p className="text-gray-600 mb-4">

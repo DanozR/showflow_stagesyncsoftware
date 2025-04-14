@@ -11,29 +11,46 @@ export const supabase = createClient(supabaseUrl, 'dummy-key');
 
 export const getAuthToken = async () => {
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('token');
+  const token = urlParams.get('token');
+  if (!token) {
+    console.error('No token found in URL');
+    return null;
+  }
+  return token;
 };
 
 export const getSession = async () => {
   const token = await getAuthToken();
-  if (!token) return null;
+  if (!token) {
+    console.error('No auth token available');
+    return null;
+  }
 
   try {
+    console.log('Fetching session with token:', token); // Add logging
+
     // Call the auth edge function to verify the token
-    const response = await fetch(`${supabaseUrl}/functions/v1/auth/session?token=${token}`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/auth/session`, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       },
     });
 
+    console.log('Session response status:', response.status); // Add logging
+
     if (!response.ok) {
-      throw new Error('Failed to verify session');
+      const errorData = await response.json();
+      console.error('Session error data:', errorData); // Add logging
+      throw new Error(errorData.error || 'Failed to verify session');
     }
 
     const data = await response.json();
+    console.log('Session data:', data); // Add logging
     return data;
   } catch (error) {
     console.error('Session error:', error);
-    throw new Error('Failed to get session');
+    throw error;
   }
 };
