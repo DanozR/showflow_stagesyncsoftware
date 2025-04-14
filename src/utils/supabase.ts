@@ -1,13 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
+import { isDevelopment } from './isDevelopment';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
   throw new Error('Missing Supabase URL');
 }
 
-// Create a basic client without the anon key
-export const supabase = createClient(supabaseUrl, 'dummy-key');
+if (!supabaseKey) {
+  if (isDevelopment()) {
+    console.warn('Missing Supabase anon key in development mode');
+  } else {
+    throw new Error('Missing Supabase anon key');
+  }
+}
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const getAuthToken = async () => {
   const urlParams = new URLSearchParams(window.location.search);
