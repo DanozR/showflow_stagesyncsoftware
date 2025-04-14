@@ -1,6 +1,7 @@
 import React, { useEffect, useState, ReactNode } from 'react';
 import { checkUserSubscription } from '../utils/checkSubscription';
 import { isDevelopment } from '../utils/isDevelopment';
+import { getSession } from '../utils/supabase';
 
 interface AuthWrapperProps {
   children: ReactNode;
@@ -9,28 +10,54 @@ interface AuthWrapperProps {
 export function AuthWrapper({ children }: AuthWrapperProps) {
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyAccess = async () => {
       // Always grant access in development mode
       if (isDevelopment()) {
+        console.log('Development mode: granting access');
         setHasAccess(true);
         setLoading(false);
         return;
       }
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        
+        if (!token) {
+          throw new Error('No access token provided');
+        }
 
-      if (!token) {
+        console.log('Starting session verification...'); // Add logging
+
+        // First verify the session
+        const session = await getSession();
+        console.log('Session verification result:', session); // Add logging
+
+        if (!session?.user) {
+          throw new Error('Invalid session');
+        }
+
+        console.log('Starting subscription check...'); // Add logging
+
+        // Then verify subscription
+        const isValid = await checkUserSubscription(token);
+        console.log('Subscription check result:', isValid); // Add logging
+
+        if (!isValid) {
+          throw new Error('Invalid or expired subscription');
+        }
+
+        setHasAccess(true);
+      } catch (error) {
+        console.error('Auth error:', error);
+        setError(error instanceof Error ? error.message : 'Authentication failed');
         setHasAccess(false);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const isValid = await checkUserSubscription(token);
-      setHasAccess(isValid);
-      setLoading(false);
     };
 
     verifyAccess();
@@ -52,6 +79,11 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-charcoal mb-4">Access Denied</h2>
+          {error && (
+            <p className="text-red-600 mb-4">
+              Error: {error}
+            </p>
+          )}
           <p className="text-gray-600 mb-4">
             Please launch ShowFlow from your StageSync Software dashboard and ensure you have an active subscription to ShowFlow.
           </p>
