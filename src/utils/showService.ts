@@ -1,6 +1,8 @@
 import { DanceClass, Student, Conflict, ShowInfo } from '../types';
 import { getAuthToken } from './supabase';
 
+const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/show-service`;
+
 export interface SavedShow {
   id: string;
   user_id: string;
@@ -16,9 +18,6 @@ export interface SavedShow {
   created_at: string;
   updated_at: string;
 }
-
-// @ts-ignore - This is replaced at build time
-const EDGE_FUNCTION_URL = `${__SUPABASE_URL__}/functions/v1/show-service`;
 
 const callEdgeFunction = async (
   action: string,
