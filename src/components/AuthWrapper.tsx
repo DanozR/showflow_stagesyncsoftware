@@ -1,7 +1,6 @@
 import React, { useEffect, useState, ReactNode } from 'react';
-import { checkUserSubscription } from '../utils/checkSubscription';
 import { isDevelopment } from '../utils/isDevelopment';
-import { getSession } from '../utils/supabase';
+import { supabase, getAuthToken } from '../utils/supabase';
 
 interface AuthWrapperProps {
   children: ReactNode;
@@ -23,8 +22,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       }
 
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+        const token = await getAuthToken();
         
         if (!token) {
           throw new Error('No access token provided');
@@ -32,23 +30,24 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
         console.log('Starting session verification...'); // Add logging
 
-        // First verify the session
-        const session = await getSession();
-        console.log('Session verification result:', session); // Add logging
+        // Verify the session using Supabase client
+        const { data: { user }, error: sessionError } = await supabase.auth.getUser(token);
 
-        if (!session?.user) {
+        if (sessionError) {
+          console.error('Session error:', sessionError);
           throw new Error('Invalid session');
         }
 
-        console.log('Starting subscription check...'); // Add logging
-
-        // Then verify subscription
-        const isValid = await checkUserSubscription(token);
-        console.log('Subscription check result:', isValid); // Add logging
-
-        if (!isValid) {
-          throw new Error('Invalid or expired subscription');
+        if (!user) {
+          console.error('No user found');
+          throw new Error('Invalid or expired session');
         }
+
+        console.log('Successfully verified user:', {
+          id: user.id,
+          email: user.email,
+          lastSignIn: user.last_sign_in_at
+        });
 
         setHasAccess(true);
       } catch (error) {
