@@ -13,46 +13,34 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
   useEffect(() => {
     const verifyAccess = async () => {
-      // Always grant access in development mode
-      if (isDevelopment()) {
-        console.log('Development mode: granting access');
-        setHasAccess(true);
-        setLoading(false);
-        return;
-      }
-
       try {
+        // Always grant access in development mode
+        if (isDevelopment()) {
+          setHasAccess(true);
+          setLoading(false);
+          return;
+        }
+
         const token = await getAuthToken();
-        
         if (!token) {
           throw new Error('No access token provided');
         }
 
-        console.log('Starting session verification...'); // Add logging
-
         // Verify the session using Supabase client
-        const { data: { user }, error: sessionError } = await supabase.auth.getUser(token);
+        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          throw new Error('Invalid session');
+        if (userError) {
+          throw userError;
         }
 
         if (!user) {
-          console.error('No user found');
           throw new Error('Invalid or expired session');
         }
 
-        console.log('Successfully verified user:', {
-          id: user.id,
-          email: user.email,
-          lastSignIn: user.last_sign_in_at
-        });
-
         setHasAccess(true);
-      } catch (error) {
-        console.error('Auth error:', error);
-        setError(error instanceof Error ? error.message : 'Authentication failed');
+      } catch (err) {
+        console.error('Authentication error:', err);
+        setError(err instanceof Error ? err.message : 'Authentication failed');
         setHasAccess(false);
       } finally {
         setLoading(false);
