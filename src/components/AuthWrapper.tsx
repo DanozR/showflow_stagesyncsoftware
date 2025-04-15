@@ -1,6 +1,6 @@
 import React, { useEffect, useState, ReactNode } from 'react';
+import { checkUserSubscription } from '../utils/checkSubscription';
 import { isDevelopment } from '../utils/isDevelopment';
-import { supabase, getAuthToken } from '../utils/supabase';
 
 interface AuthWrapperProps {
   children: ReactNode;
@@ -14,27 +14,22 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   useEffect(() => {
     const verifyAccess = async () => {
       try {
-        // Always grant access in development mode
         if (isDevelopment()) {
           setHasAccess(true);
           setLoading(false);
           return;
         }
 
-        const token = await getAuthToken();
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
         if (!token) {
           throw new Error('No access token provided');
         }
 
-        // Verify the session using Supabase client
-        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-        if (userError) {
-          throw userError;
-        }
-
-        if (!user) {
-          throw new Error('Invalid or expired session');
+        const isValid = await checkUserSubscription(token);
+        if (!isValid) {
+          throw new Error('Invalid or expired subscription');
         }
 
         setHasAccess(true);

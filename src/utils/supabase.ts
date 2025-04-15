@@ -14,6 +14,6 @@ if (!supabaseKey) {
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const getAuthToken = async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('token');
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token;
 };
