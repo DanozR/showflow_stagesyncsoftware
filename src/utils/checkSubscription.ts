@@ -1,4 +1,5 @@
 import { isDevelopment } from './isDevelopment';
+import * as jose from 'jose';
 
 export const checkUserSubscription = async (token: string): Promise<boolean> => {
   if (isDevelopment()) {
@@ -6,6 +7,21 @@ export const checkUserSubscription = async (token: string): Promise<boolean> => 
   }
 
   try {
+    // First verify the JWT locally
+    const secret = new TextEncoder().encode(import.meta.env.JWT_SECRET);
+    
+    try {
+      // Verify the token
+      await jose.jwtVerify(token, secret, {
+        issuer: 'stagesyncsoftware.com',
+        audience: 'showflow'
+      });
+    } catch (jwtError) {
+      console.error('JWT verification failed:', jwtError);
+      return false;
+    }
+
+    // If JWT verification succeeds, verify subscription with dashboard
     const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'https://app.stagesyncsoftware.com';
     
     const response = await fetch(
