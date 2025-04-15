@@ -9,7 +9,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
-
-declare const __SUPABASE_URL__: string;
-declare const __SUPABASE_KEY__: string;
-declare const __DASHBOARD_URL__: string;

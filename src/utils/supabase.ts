@@ -11,7 +11,13 @@ if (!supabaseKey) {
   throw new Error('Missing Supabase anon key');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 export const getAuthToken = async () => {
   const { data: { session } } = await supabase.auth.getSession();
