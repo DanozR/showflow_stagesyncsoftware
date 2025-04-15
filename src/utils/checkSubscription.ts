@@ -6,7 +6,8 @@ export const checkUserSubscription = async (token: string): Promise<boolean> => 
   }
 
   try {
-    const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'https://app.stagesyncsoftware.com';
+    // @ts-ignore - This is replaced at build time
+    const DASHBOARD_URL = __DASHBOARD_URL__ || 'https://app.stagesyncsoftware.com';
     
     const response = await fetch(
       `${DASHBOARD_URL}/.netlify/functions/verify-token?token=${token}`,

@@ -17,7 +17,8 @@ export interface SavedShow {
   updated_at: string;
 }
 
-const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/show-service`;
+// @ts-ignore - This is replaced at build time
+const EDGE_FUNCTION_URL = `${__SUPABASE_URL__}/functions/v1/show-service`;
 
 const callEdgeFunction = async (
   action: string,
