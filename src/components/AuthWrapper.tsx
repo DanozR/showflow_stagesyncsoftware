@@ -1,7 +1,6 @@
 import React, { useEffect, useState, ReactNode } from 'react';
 import { checkUserSubscription } from '../utils/checkSubscription';
 import { isDevelopment } from '../utils/isDevelopment';
-import { isSupabaseConfigured } from '../utils/supabase';
 
 interface AuthWrapperProps {
   children: ReactNode;
@@ -10,38 +9,28 @@ interface AuthWrapperProps {
 export function AuthWrapper({ children }: AuthWrapperProps) {
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyAccess = async () => {
-      try {
-        // Always allow access in development
-        if (isDevelopment()) {
-          setHasAccess(true);
-          setLoading(false);
-          return;
-        }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-
-        if (!token) {
-          throw new Error('No access token provided');
-        }
-
-        const isValid = await checkUserSubscription(token);
-        if (!isValid) {
-          throw new Error('Invalid or expired subscription');
-        }
-
+      // Always grant access in development mode
+      if (isDevelopment()) {
         setHasAccess(true);
-      } catch (err) {
-        console.error('Authentication error:', err);
-        setError(err instanceof Error ? err.message : 'Authentication failed');
-        setHasAccess(false);
-      } finally {
         setLoading(false);
+        return;
       }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      if (!token) {
+        setHasAccess(false);
+        setLoading(false);
+        return;
+      }
+
+      const isValid = await checkUserSubscription(token);
+      setHasAccess(isValid);
+      setLoading(false);
     };
 
     verifyAccess();
@@ -58,21 +47,16 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  if (!hasAccess && !isDevelopment()) {
+  if (!hasAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-charcoal mb-4">Access Denied</h2>
-          {error && (
-            <p className="text-red-600 mb-4">
-              Error: {error}
-            </p>
-          )}
           <p className="text-gray-600 mb-4">
             Please launch ShowFlow from your StageSync Software dashboard and ensure you have an active subscription to ShowFlow.
           </p>
           <a
-            href={import.meta.env.VITE_DASHBOARD_URL || 'https://app.stagesyncsoftware.com'}
+            href="https://app.stagesyncsoftware.com"
             className="inline-block px-4 py-2 bg-coral text-white rounded-md hover:bg-coral/90 transition-colors"
           >
             Go to Dashboard

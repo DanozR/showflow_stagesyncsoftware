@@ -12,20 +12,5 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, './src')
     }
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'supabase-vendor': ['@supabase/supabase-js']
-        }
-      }
-    },
-    sourcemap: false,
-    // Ensure environment variables are treated as runtime variables
-    commonjsOptions: {
-      transformMixedEsModules: true
-    }
   }
 });
