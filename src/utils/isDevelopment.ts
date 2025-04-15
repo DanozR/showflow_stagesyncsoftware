@@ -3,7 +3,7 @@
  * @returns boolean indicating if in development mode
  */
 export const isDevelopment = (): boolean => {
-  const isDev = (
+  return (
     import.meta.env.DEV || 
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1' ||
@@ -12,6 +12,4 @@ export const isDevelopment = (): boolean => {
     window.location.hostname.includes('stackblitz.io') ||
     window.location.hostname.includes('webcontainer.io')
   );
-  console.log('Is Development Mode:', isDev); // Add logging for debugging
-  return isDev;
 };
