@@ -28,11 +28,10 @@ export default defineConfig(({ mode }) => {
       }
     },
     define: {
-      // Replace sensitive environment variables with empty strings in production
-      ...(mode === 'production' && {
-        'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(''),
-        'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || '')
-      })
+      // Ensure environment variables are properly stringified
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || ''),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || ''),
+      'import.meta.env.VITE_DASHBOARD_URL': JSON.stringify(env.VITE_DASHBOARD_URL || '')
     }
   };
 });
