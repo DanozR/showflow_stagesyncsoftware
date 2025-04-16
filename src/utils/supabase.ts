@@ -1,25 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
+import { isDevelopment } from './isDevelopment';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Only create the client in development mode
+export const supabase = isDevelopment() 
+  ? createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: false, // Don't persist auth state in development
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      }
+    )
+  : null;
 
-if (!supabaseUrl) {
-  throw new Error('Missing Supabase URL');
-}
-
-if (!supabaseKey) {
-  throw new Error('Missing Supabase anon key');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
-
+// Get auth token from URL in production, or from Supabase in development
 export const getAuthToken = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token;
+  if (isDevelopment()) {
+    const { data: { session } } = await supabase!.auth.getSession();
+    return session?.access_token;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('token');
 };

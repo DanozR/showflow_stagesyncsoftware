@@ -826,7 +826,7 @@ function App() {
                     </div>
                   )}
                   
-                  {students.length > 0 && classes.length > 0 && (
+                  {students.length > 0 && classes.length > 0  && (
                     <div className="mb-4">
                       <ExportButtons 
                         classes={classes}

@@ -1,9 +1,7 @@
 [build]
   command = "npm run build"
   publish = "dist"
-
-[build.environment]
-  NODE_VERSION = "20"
+  functions = "netlify/functions"
 
 [functions]
   node_bundler = "esbuild"
@@ -12,3 +10,10 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[dev]
+  command = "npm run dev"
+  targetPort = 5173
+  port = 8888
+  publish = "dist"
+  autoLaunch = false

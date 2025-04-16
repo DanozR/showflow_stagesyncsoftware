@@ -1,7 +1,4 @@
 import { DanceClass, Student, Conflict, ShowInfo } from '../types';
-import { getAuthToken } from './supabase';
-
-const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/show-service`;
 
 export interface SavedShow {
   id: string;
@@ -19,25 +16,18 @@ export interface SavedShow {
   updated_at: string;
 }
 
-const callEdgeFunction = async (
-  action: string,
+const callNetlifyFunction = async (
   method: string,
-  data?: any,
-  queryParams?: Record<string, string>
-) => {
-  const token = await getAuthToken();
+  data?: any
+): Promise<any> => {
+  // Get token from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
   if (!token) {
     throw new Error('No authentication token found');
   }
 
-  const url = new URL(`${EDGE_FUNCTION_URL}/${action}`);
-  if (queryParams) {
-    Object.entries(queryParams).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
-    });
-  }
-
-  const response = await fetch(url.toString(), {
+  const response = await fetch('/.netlify/functions/supabase', {
     method,
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -51,7 +41,7 @@ const callEdgeFunction = async (
     throw new Error(error.error || 'An error occurred');
   }
 
-  return method === 'DELETE' ? undefined : response.json();
+  return response.json();
 };
 
 export const saveShow = async (
@@ -61,7 +51,7 @@ export const saveShow = async (
   conflicts: Conflict[],
   showInfo: ShowInfo
 ): Promise<SavedShow> => {
-  return callEdgeFunction('save', 'POST', {
+  return callNetlifyFunction('POST', {
     showName,
     classes,
     students,
@@ -77,7 +67,7 @@ export const updateShow = async (
   conflicts: Conflict[],
   showInfo: ShowInfo
 ): Promise<SavedShow> => {
-  return callEdgeFunction('update', 'PUT', {
+  return callNetlifyFunction('PUT', {
     showId,
     classes,
     students,
@@ -86,14 +76,10 @@ export const updateShow = async (
   });
 };
 
-export const loadShow = async (showId: string): Promise<SavedShow> => {
-  return callEdgeFunction('load', 'GET', undefined, { id: showId });
-};
-
 export const listShows = async (): Promise<SavedShow[]> => {
-  return callEdgeFunction('list', 'GET');
+  return callNetlifyFunction('GET');
 };
 
 export const deleteShow = async (showId: string): Promise<void> => {
-  return callEdgeFunction('delete', 'DELETE', undefined, { id: showId });
+  return callNetlifyFunction('DELETE', { showId });
 };
