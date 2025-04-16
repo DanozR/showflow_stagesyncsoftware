@@ -52,7 +52,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  if (error && !isDevelopment()) {
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
@@ -66,6 +66,19 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           >
             Go to Dashboard
           </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (isDevelopment()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+          <h2 className="text-2xl font-bold text-charcoal mb-4">Development Mode</h2>
+          <p className="text-gray-600 mb-4">
+            This application is currently in development mode.
+          </p>
         </div>
       </div>
     );
