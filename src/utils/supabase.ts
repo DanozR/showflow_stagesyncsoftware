@@ -17,9 +17,10 @@ export const supabase = isDevelopment()
   : null;
 
 // Get auth token from URL in production, or from Supabase in development
-export const getAuthToken = () => {
+export const getAuthToken = async () => {
   if (isDevelopment()) {
-    return 'development-token';
+    const { data: { session } } = await supabase!.auth.getSession();
+    return session?.access_token;
   }
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -29,7 +30,7 @@ export const getAuthToken = () => {
 // Call Netlify function to interact with Supabase
 export const callSupabaseFunction = async (method: string, data?: any) => {
   try {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -41,8 +42,6 @@ export const callSupabaseFunction = async (method: string, data?: any) => {
         'Content-Type': 'application/json',
       },
       body: data ? JSON.stringify(data) : undefined,
-      // Prevent caching
-      cache: 'no-store'
     });
 
     // Check for 401 Unauthorized first
@@ -75,8 +74,10 @@ export const callSupabaseFunction = async (method: string, data?: any) => {
         (error.message.includes('Authentication failed') || 
          error.message.includes('No authentication token found'))) {
       window.location.href = import.meta.env.VITE_DASHBOARD_URL + '/login';
+      throw error;
     }
     
+    // Re-throw other errors
     throw error;
   }
 };
