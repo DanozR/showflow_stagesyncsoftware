@@ -1,4 +1,5 @@
 import { isDevelopment } from './isDevelopment';
+import { callSupabaseFunction } from './supabase';
 
 interface SubscriptionResult {
   valid: boolean;
@@ -24,21 +25,16 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
   }
 
   try {
-    const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'https://app.stagesyncsoftware.com';
-    console.log('checkUserSubscription: Using dashboard URL:', DASHBOARD_URL);
-    
-    const response = await fetch(
-      `${DASHBOARD_URL}/netlify/functions/verify-token`,
-      { 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ token })
-      }
-    );
-    
+    console.log('checkUserSubscription: Calling proxy endpoint');
+    const response = await fetch('/.netlify/functions/supabase/verify-token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ token })
+    });
+
     console.log('checkUserSubscription: Response status:', response.status);
 
     // Always try to get the response text first

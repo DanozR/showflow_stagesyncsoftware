@@ -17,6 +17,49 @@ exports.handler = async (event, context) => {
     };
   }
 
+  // Proxy for /netlify/functions/verify-token
+  if (event.path.includes('/netlify/functions/verify-token')) {
+    console.log('supabase.js: Proxying /netlify/functions/verify-token');
+    try {
+      const token = event.headers.authorization?.replace('Bearer ', '');
+      console.log('supabase.js: Token to proxy:', token ? 'Present' : 'Missing');
+
+      const dashboardUrl = process.env.DASHBOARD_URL;
+      console.log('supabase.js: Proxying to dashboard URL:', dashboardUrl);
+
+      const response = await fetch(`${dashboardUrl}/netlify/functions/verify-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ token })
+      });
+
+      const data = await response.json();
+      console.log('supabase.js: Proxy response:', data);
+
+      return {
+        statusCode: response.status,
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      };
+    } catch (error) {
+      console.error('supabase.js: Proxy error:', error);
+      return {
+        statusCode: 500,
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ error: error.message || 'Proxy error' })
+      };
+    }
+  }
+
   try {
     console.log('supabase.js: Creating Supabase client');
     const supabase = createClient(
@@ -42,34 +85,6 @@ exports.handler = async (event, context) => {
     }
     console.log('supabase.js: User found:', user.id);
 
-    // Check if user exists in organization_users
-    console.log('supabase.js: Checking organization membership');
-    const { data: orgUser, error: orgError } = await supabase
-      .from('organization_users')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    // If user doesn't exist in organization_users, create a default entry
-    if (!orgUser && !orgError) {
-      console.log('supabase.js: Creating default organization membership');
-      const { error: insertError } = await supabase
-        .from('organization_users')
-        .insert({
-          user_id: user.id,
-          organization_id: process.env.DEFAULT_ORG_ID || '00000000-0000-0000-0000-000000000000',
-          role: 'member'
-        });
-
-      if (insertError) {
-        console.error('supabase.js: Error creating organization membership:', insertError);
-        throw insertError;
-      }
-    } else if (orgError && orgError.code !== 'PGRST116') {
-      console.error('supabase.js: Organization error:', orgError);
-      throw orgError;
-    }
-
     // Handle different HTTP methods
     console.log('supabase.js: Handling', event.httpMethod, 'request');
     switch (event.httpMethod) {
@@ -77,13 +92,7 @@ exports.handler = async (event, context) => {
         // Get shows for the authenticated user
         const { data, error } = await supabase
           .from('shows')
-          .select(`
-            *,
-            organization_users!inner (
-              organization_id,
-              role
-            )
-          `)
+          .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -107,24 +116,11 @@ exports.handler = async (event, context) => {
         const body = JSON.parse(event.body);
         console.log('supabase.js: Creating new show');
 
-        // Get user's organization
-        const { data: userOrg, error: userOrgError } = await supabase
-          .from('organization_users')
-          .select('organization_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (userOrgError) {
-          console.error('supabase.js: Error getting user organization:', userOrgError);
-          throw userOrgError;
-        }
-
         // Save new show
         const { data, error } = await supabase
           .from('shows')
           .insert({
             user_id: user.id,
-            organization_id: userOrg.organization_id,
             show_name: body.showName,
             name: body.showInfo.name,
             data: {
