@@ -21,22 +21,26 @@ exports.handler = async (event, context) => {
   if (event.path.includes('/verify-token')) {
     console.log('supabase.js: Proxying verify-token request');
     try {
-      const token = event.headers.authorization?.replace('Bearer ', '');
+      // Get token from query parameter
+      const urlParams = new URLSearchParams(event.queryStringParameters);
+      const token = urlParams.get('token');
       console.log('supabase.js: Token to proxy:', token ? 'Present' : 'Missing');
+
+      if (!token) {
+        throw new Error('No token provided');
+      }
 
       const dashboardUrl = process.env.DASHBOARD_URL;
       console.log('supabase.js: Dashboard URL:', dashboardUrl);
-      console.log('supabase.js: Full proxy URL:', `${dashboardUrl}/netlify/functions/verify-token`);
-      console.log('supabase.js: Request headers:', JSON.stringify({
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }));
 
-      const response = await fetch(`${dashboardUrl}/netlify/functions/verify-token`, {
-        method: 'POST',
+      // Construct the proxy URL with token as query parameter
+      const proxyUrl = `${dashboardUrl}/netlify/functions/verify-token?token=${encodeURIComponent(token)}`;
+      console.log('supabase.js: Full proxy URL:', proxyUrl);
+
+      const response = await fetch(proxyUrl, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Accept': 'application/json'
         }
       });
 

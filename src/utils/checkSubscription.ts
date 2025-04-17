@@ -24,12 +24,15 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
   }
 
   try {
-    console.log('checkUserSubscription: Calling proxy endpoint');
-    const response = await fetch('/.netlify/functions/supabase/verify-token', {
-      method: 'POST',
+    // Construct URL with token as query parameter
+    const verifyUrl = `/.netlify/functions/supabase/verify-token?token=${encodeURIComponent(token)}`;
+    console.log('checkUserSubscription: Calling verify endpoint:', verifyUrl);
+
+    const response = await fetch(verifyUrl, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        // Only include required CORS headers
+        'Accept': 'application/json'
       }
     });
 
@@ -69,6 +72,15 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
       };
     }
 
+    // Check if this is a ShowFlow token
+    if (data.app !== 'showflow') {
+      console.log('checkUserSubscription: Invalid app type:', data.app);
+      return {
+        valid: false,
+        error: 'Invalid application token'
+      };
+    }
+
     if (!data.valid) {
       console.log('checkUserSubscription: Token invalid according to response');
       return {
@@ -80,7 +92,10 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     console.log('checkUserSubscription: Verification successful');
     return {
       valid: true,
-      user: data.user
+      user: {
+        id: data.userId,
+        email: data.email || 'unknown'
+      }
     };
 
   } catch (err) {
