@@ -11,7 +11,6 @@ interface SubscriptionResult {
 
 export const checkUserSubscription = async (token: string): Promise<SubscriptionResult> => {
   console.log('checkUserSubscription: Starting verification process');
-  console.log('Checking subscription with token:', token);
 
   if (isDevelopment()) {
     console.log('Development mode: allowing access');
@@ -24,89 +23,75 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     };
   }
 
-  if (!token) {
-    console.log('checkUserSubscription: No token provided');
-    console.error('No token provided');
-    return {
-      valid: false,
-      error: 'Missing token'
-    };
-  }
-
   try {
     const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'https://app.stagesyncsoftware.com';
     console.log('checkUserSubscription: Using dashboard URL:', DASHBOARD_URL);
-    console.log('Verifying subscription with dashboard:', DASHBOARD_URL);
     
     const response = await fetch(
-      `${DASHBOARD_URL}/.netlify/functions/verify-token?token=${token}`,
-      { method: 'GET' }
-    );
-    console.log('checkUserSubscription: Fetch completed');
-    
-    console.log('Dashboard response status:', response.status);
-
-    // Check content type before attempting to parse response
-    const contentType = response.headers.get('content-type');
-    
-    if (!response.ok) {
-      let errorMessage: string;
-      
-      if (contentType?.includes('application/json')) {
-        console.log('checkUserSubscription: Response is JSON, parsing...');
-        const errorData = await response.json();
-        errorMessage = errorData.message || 'Verification failed';
-      } else {
-        // Log the raw response for debugging
-        const rawResponse = await response.text();
-        console.error('Non-JSON error response:', rawResponse);
-        errorMessage = 'Invalid response format from verification service';
+      `${DASHBOARD_URL}/.netlify/functions/verify-token`,
+      { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ token })
       }
-      
-      console.log('checkUserSubscription: Verification failed:', errorMessage);
-      console.error('Verify Error:', errorMessage);
-      return {
-        valid: false,
-        error: errorMessage
-      };
-    }
+    );
+    
+    console.log('checkUserSubscription: Response status:', response.status);
 
-    // Verify response is JSON before parsing
-    if (!contentType?.includes('application/json')) {
-      console.log('checkUserSubscription: Response is not JSON');
-      const rawResponse = await response.text();
-      console.error('Unexpected non-JSON response:', rawResponse);
+    // Always try to get the response text first
+    const responseText = await response.text();
+    console.log('checkUserSubscription: Raw response:', responseText);
+
+    // Try to parse as JSON if possible
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log('checkUserSubscription: Parsed JSON response:', data);
+    } catch (parseError) {
+      console.error('checkUserSubscription: Failed to parse JSON:', parseError);
       return {
         valid: false,
         error: 'Invalid response format from verification service'
       };
     }
-    
-    const data = await response.json();
-    console.log('checkUserSubscription: Response data:', data);
-    console.log('Dashboard verification result:', data);
-    
-    const { valid, user, app } = data;
-    if (valid && app === 'showflow' && user) {
-      console.log('checkUserSubscription: Verification successful');
+
+    if (!response.ok) {
+      console.log('checkUserSubscription: Response not OK');
       return {
-        valid: true,
-        user: {
-          id: user.id,
-          email: user.email
-        }
+        valid: false,
+        error: data.error || 'Verification failed'
       };
     }
 
-    console.log('checkUserSubscription: Invalid token or app');
+    // Check for expected response format
+    if (typeof data.valid !== 'boolean') {
+      console.log('checkUserSubscription: Invalid response format - missing valid flag');
+      return {
+        valid: false,
+        error: 'Invalid response format from verification service'
+      };
+    }
+
+    if (!data.valid) {
+      console.log('checkUserSubscription: Token invalid according to response');
+      return {
+        valid: false,
+        error: data.error || 'Invalid token'
+      };
+    }
+
+    console.log('checkUserSubscription: Verification successful');
     return {
-      valid: false,
-      error: 'Invalid token or app'
+      valid: true,
+      user: data.user
     };
-  } catch (err: unknown) {
+
+  } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-    console.log('checkUserSubscription: An error occurred:', errorMessage);
-    console.error('Token verification failed:', errorMessage);
+    console.error('checkUserSubscription: Error during verification:', errorMessage);
     return {
       valid: false,
       error: errorMessage
