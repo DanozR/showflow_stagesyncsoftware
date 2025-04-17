@@ -24,7 +24,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
   try {
     const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
     const verifyUrl = `${dashboardUrl}/netlify/functions/verify-token?token=${encodeURIComponent(token)}`;
-    console.log('checkUserSubscription: Calling verify endpoint');
+    console.log('checkUserSubscription: Verifying token at:', verifyUrl);
 
     const response = await fetch(verifyUrl, {
       method: 'GET',
