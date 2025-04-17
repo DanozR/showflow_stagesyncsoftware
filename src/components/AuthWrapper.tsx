@@ -1,5 +1,5 @@
 import React, { useEffect, useState, ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { isDevelopment } from '../utils/isDevelopment';
 import { checkUserSubscription } from '../utils/checkSubscription';
 
@@ -11,32 +11,47 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const verifyAccess = async () => {
+      console.log('AuthWrapper: Starting access verification');
+      
       // Always grant access in development mode
       if (isDevelopment()) {
+        console.log('AuthWrapper: Development mode detected, granting access');
         setLoading(false);
         return;
       }
 
       const token = searchParams.get('token');
+      console.log('AuthWrapper: Token from URL:', token ? 'Present' : 'Missing');
+      
       if (!token) {
+        console.log('AuthWrapper: No token found, redirecting to login');
         setError('No authentication token found');
         setLoading(false);
+        window.location.href = import.meta.env.VITE_DASHBOARD_URL + '/login';
         return;
       }
 
       try {
+        console.log('AuthWrapper: Verifying token with subscription service');
         const result = await checkUserSubscription(token);
+        console.log('AuthWrapper: Verification result:', result);
+        
         if (!result.valid) {
+          console.log('AuthWrapper: Invalid token, redirecting to login');
           setError(result.error || 'Invalid token');
-          // Redirect to dashboard login
           window.location.href = import.meta.env.VITE_DASHBOARD_URL + '/login';
+        } else {
+          console.log('AuthWrapper: Token verified successfully');
+          // Clear error if it was previously set
+          setError(null);
         }
       } catch (err) {
+        console.error('AuthWrapper: Verification error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');
-        // Redirect to dashboard login
         window.location.href = import.meta.env.VITE_DASHBOARD_URL + '/login';
       } finally {
         setLoading(false);

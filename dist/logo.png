@@ -23,7 +23,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#2e3138">
 <meta name="csrf-param" content="authenticity_token" />
-<meta name="csrf-token" content="S5GYK_vSlCJalhF0J1Q0loA3vLzHjNBFNEntbJVxkWvTEbZnU9mYi8IKj8_GnHFG21dw4CZ0PIT801kNM4IYFg" />
+<meta name="csrf-token" content="inR6ZMpWbMgxvtPsUlwi2C3D0RLpwjTXYCl4yQ9phMMS9FQoYl1gYakiTVezlGcIdqMdTgg62Baos8yoqZoNvg" />
 <meta name="action-cable-url" content="/cable" />
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/svg+xml" href="https://c.staticblitz.com/assets/favicon_sb-861fe1b85c0dc928750c62de15fed96fc75e57ee366bd937bad17a3938917b3f.svg">

@@ -10,6 +10,7 @@ interface SubscriptionResult {
 }
 
 export const checkUserSubscription = async (token: string): Promise<SubscriptionResult> => {
+  console.log('checkUserSubscription: Starting verification process');
   console.log('Checking subscription with token:', token);
 
   if (isDevelopment()) {
@@ -24,6 +25,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
   }
 
   if (!token) {
+    console.log('checkUserSubscription: No token provided');
     console.error('No token provided');
     return {
       valid: false,
@@ -33,12 +35,14 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
 
   try {
     const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'https://app.stagesyncsoftware.com';
+    console.log('checkUserSubscription: Using dashboard URL:', DASHBOARD_URL);
     console.log('Verifying subscription with dashboard:', DASHBOARD_URL);
     
     const response = await fetch(
       `${DASHBOARD_URL}/.netlify/functions/verify-token?token=${token}`,
       { method: 'GET' }
     );
+    console.log('checkUserSubscription: Fetch completed');
     
     console.log('Dashboard response status:', response.status);
 
@@ -49,6 +53,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
       let errorMessage: string;
       
       if (contentType?.includes('application/json')) {
+        console.log('checkUserSubscription: Response is JSON, parsing...');
         const errorData = await response.json();
         errorMessage = errorData.message || 'Verification failed';
       } else {
@@ -58,6 +63,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
         errorMessage = 'Invalid response format from verification service';
       }
       
+      console.log('checkUserSubscription: Verification failed:', errorMessage);
       console.error('Verify Error:', errorMessage);
       return {
         valid: false,
@@ -67,6 +73,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
 
     // Verify response is JSON before parsing
     if (!contentType?.includes('application/json')) {
+      console.log('checkUserSubscription: Response is not JSON');
       const rawResponse = await response.text();
       console.error('Unexpected non-JSON response:', rawResponse);
       return {
@@ -76,10 +83,12 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     }
     
     const data = await response.json();
+    console.log('checkUserSubscription: Response data:', data);
     console.log('Dashboard verification result:', data);
     
     const { valid, user, app } = data;
     if (valid && app === 'showflow' && user) {
+      console.log('checkUserSubscription: Verification successful');
       return {
         valid: true,
         user: {
@@ -89,12 +98,14 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
       };
     }
 
+    console.log('checkUserSubscription: Invalid token or app');
     return {
       valid: false,
       error: 'Invalid token or app'
     };
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+    console.log('checkUserSubscription: An error occurred:', errorMessage);
     console.error('Token verification failed:', errorMessage);
     return {
       valid: false,
