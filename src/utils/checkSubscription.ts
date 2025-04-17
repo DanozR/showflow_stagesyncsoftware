@@ -4,7 +4,7 @@ interface SubscriptionResult {
   valid: boolean;
   user?: {
     id: string;
-    email: string;
+    email?: string;
   };
   error?: string;
 }
@@ -17,8 +17,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     return {
       valid: true,
       user: {
-        id: 'test-user',
-        email: 'test@example.com'
+        id: 'test-user'
       }
     };
   }
@@ -26,12 +25,11 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
   try {
     // Construct URL with token as query parameter
     const verifyUrl = `/.netlify/functions/supabase/verify-token?token=${encodeURIComponent(token)}`;
-    console.log('checkUserSubscription: Calling verify endpoint:', verifyUrl);
+    console.log('checkUserSubscription: Calling verify endpoint');
 
     const response = await fetch(verifyUrl, {
       method: 'GET',
       headers: {
-        // Only include required CORS headers
         'Accept': 'application/json'
       }
     });
@@ -93,8 +91,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     return {
       valid: true,
       user: {
-        id: data.userId,
-        email: data.email || 'unknown'
+        id: data.userId
       }
     };
 

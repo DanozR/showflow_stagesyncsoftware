@@ -35,7 +35,7 @@ exports.handler = async (event, context) => {
 
       // Construct the proxy URL with token as query parameter
       const proxyUrl = `${dashboardUrl}/netlify/functions/verify-token?token=${encodeURIComponent(token)}`;
-      console.log('supabase.js: Full proxy URL:', proxyUrl);
+      console.log('supabase.js: Proxying request');
 
       const response = await fetch(proxyUrl, {
         method: 'GET',
@@ -46,7 +46,6 @@ exports.handler = async (event, context) => {
 
       console.log('supabase.js: Proxy response status:', response.status);
       const responseText = await response.text();
-      console.log('supabase.js: Proxy raw response:', responseText);
 
       // Try to parse as JSON
       let data;
@@ -55,7 +54,7 @@ exports.handler = async (event, context) => {
         console.log('supabase.js: Parsed response:', data);
       } catch (parseError) {
         console.error('supabase.js: JSON parse error:', parseError);
-        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+        throw new Error('Invalid JSON response from verification service');
       }
 
       return {
@@ -75,8 +74,7 @@ exports.handler = async (event, context) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          error: error.message || 'Proxy error',
-          details: error.stack
+          error: error.message || 'Proxy error'
         })
       };
     }
