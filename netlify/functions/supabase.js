@@ -18,8 +18,8 @@ exports.handler = async (event, context) => {
   }
 
   // Proxy for /netlify/functions/verify-token
-  if (event.path.includes('/netlify/functions/verify-token')) {
-    console.log('supabase.js: Proxying /netlify/functions/verify-token');
+  if (event.path.includes('/verify-token')) {
+    console.log('supabase.js: Proxying verify-token request');
     try {
       const token = event.headers.authorization?.replace('Bearer ', '');
       console.log('supabase.js: Token to proxy:', token ? 'Present' : 'Missing');
@@ -32,8 +32,7 @@ exports.handler = async (event, context) => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ token })
+        }
       });
 
       const data = await response.json();

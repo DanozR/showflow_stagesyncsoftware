@@ -1,5 +1,4 @@
 import { isDevelopment } from './isDevelopment';
-import { callSupabaseFunction } from './supabase';
 
 interface SubscriptionResult {
   valid: boolean;
@@ -31,8 +30,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ token })
+      }
     });
 
     console.log('checkUserSubscription: Response status:', response.status);
