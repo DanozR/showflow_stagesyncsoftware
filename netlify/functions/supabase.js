@@ -3,7 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 exports.handler = async (event, context) => {
   // Add CORS headers
   const headers = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://showflow.stagesyncsoftware.com',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
   };
