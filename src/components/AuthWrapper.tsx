@@ -28,10 +28,9 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       console.log('AuthWrapper: Token from URL:', token ? 'Present' : 'Missing');
       
       if (!token) {
-        console.log('AuthWrapper: No token found, redirecting to login');
+        console.log('AuthWrapper: No token found, showing error');
         setError('No authentication token found');
         setLoading(false);
-        window.location.href = import.meta.env.VITE_DASHBOARD_URL + '/login';
         return;
       }
 
@@ -41,9 +40,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         console.log('AuthWrapper: Verification result:', result);
         
         if (!result.valid) {
-          console.log('AuthWrapper: Invalid token, redirecting to login');
+          console.log('AuthWrapper: Invalid token, showing error');
           setError(result.error || 'Invalid token');
-          window.location.href = import.meta.env.VITE_DASHBOARD_URL + '/login';
         } else {
           console.log('AuthWrapper: Token verified successfully');
           // Clear error if it was previously set
@@ -52,7 +50,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       } catch (err) {
         console.error('AuthWrapper: Verification error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');
-        window.location.href = import.meta.env.VITE_DASHBOARD_URL + '/login';
       } finally {
         setLoading(false);
       }

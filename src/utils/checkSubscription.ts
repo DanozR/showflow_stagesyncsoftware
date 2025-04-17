@@ -28,7 +28,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     console.log('checkUserSubscription: Using dashboard URL:', DASHBOARD_URL);
     
     const response = await fetch(
-      `${DASHBOARD_URL}/.netlify/functions/verify-token`,
+      `${DASHBOARD_URL}/netlify/functions/verify-token`,
       { 
         method: 'POST',
         headers: {
