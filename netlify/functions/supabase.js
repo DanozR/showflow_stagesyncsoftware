@@ -4,7 +4,7 @@ exports.handler = async (event, context) => {
   // Add CORS headers
   const headers = {
     'Access-Control-Allow-Origin': 'https://showflow.stagesyncsoftware.com',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
   };
 

@@ -23,13 +23,21 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
 
   try {
     const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
-    const verifyUrl = `${dashboardUrl}/netlify/functions/verify-token?token=${encodeURIComponent(token)}`;
-    console.log('checkUserSubscription: Verifying token at:', verifyUrl);
+    if (!dashboardUrl) {
+      throw new Error('Dashboard URL not configured');
+    }
 
-    const response = await fetch(verifyUrl, {
+    // Construct the verification URL with proper encoding
+    const verifyUrl = new URL('/netlify/functions/verify-token', dashboardUrl);
+    verifyUrl.searchParams.append('token', token);
+    
+    console.log('checkUserSubscription: Verifying token');
+
+    const response = await fetch(verifyUrl.toString(), {
       method: 'GET',
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Origin': window.location.origin
       }
     });
 
