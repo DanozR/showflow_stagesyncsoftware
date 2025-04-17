@@ -17,69 +17,6 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Proxy for /netlify/functions/verify-token
-  if (event.path.includes('/verify-token')) {
-    console.log('supabase.js: Proxying verify-token request');
-    try {
-      // Get token from query parameter
-      const urlParams = new URLSearchParams(event.queryStringParameters);
-      const token = urlParams.get('token');
-      console.log('supabase.js: Token to proxy:', token ? 'Present' : 'Missing');
-
-      if (!token) {
-        throw new Error('No token provided');
-      }
-
-      const dashboardUrl = process.env.DASHBOARD_URL;
-      console.log('supabase.js: Dashboard URL:', dashboardUrl);
-
-      // Construct the proxy URL with token as query parameter
-      const proxyUrl = `${dashboardUrl}/netlify/functions/verify-token?token=${encodeURIComponent(token)}`;
-      console.log('supabase.js: Proxying request');
-
-      const response = await fetch(proxyUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      console.log('supabase.js: Proxy response status:', response.status);
-      const responseText = await response.text();
-
-      // Try to parse as JSON
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log('supabase.js: Parsed response:', data);
-      } catch (parseError) {
-        console.error('supabase.js: JSON parse error:', parseError);
-        throw new Error('Invalid JSON response from verification service');
-      }
-
-      return {
-        statusCode: response.status,
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      };
-    } catch (error) {
-      console.error('supabase.js: Proxy error:', error);
-      return {
-        statusCode: 500,
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          error: error.message || 'Proxy error'
-        })
-      };
-    }
-  }
-
   try {
     console.log('supabase.js: Creating Supabase client');
     const supabase = createClient(

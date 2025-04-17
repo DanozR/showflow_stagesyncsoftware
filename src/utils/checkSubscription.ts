@@ -4,7 +4,6 @@ interface SubscriptionResult {
   valid: boolean;
   user?: {
     id: string;
-    email?: string;
   };
   error?: string;
 }
@@ -23,8 +22,8 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
   }
 
   try {
-    // Construct URL with token as query parameter
-    const verifyUrl = `/.netlify/functions/supabase/verify-token?token=${encodeURIComponent(token)}`;
+    const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
+    const verifyUrl = `${dashboardUrl}/netlify/functions/verify-token?token=${encodeURIComponent(token)}`;
     console.log('checkUserSubscription: Calling verify endpoint');
 
     const response = await fetch(verifyUrl, {
@@ -61,21 +60,21 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
       };
     }
 
-    // Check for expected response format
-    if (typeof data.valid !== 'boolean') {
-      console.log('checkUserSubscription: Invalid response format - missing valid flag');
-      return {
-        valid: false,
-        error: 'Invalid response format from verification service'
-      };
-    }
-
     // Check if this is a ShowFlow token
     if (data.app !== 'showflow') {
       console.log('checkUserSubscription: Invalid app type:', data.app);
       return {
         valid: false,
         error: 'Invalid application token'
+      };
+    }
+
+    // Check for expected response format
+    if (typeof data.valid !== 'boolean') {
+      console.log('checkUserSubscription: Invalid response format - missing valid flag');
+      return {
+        valid: false,
+        error: 'Invalid response format from verification service'
       };
     }
 
