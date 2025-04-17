@@ -25,7 +25,12 @@ exports.handler = async (event, context) => {
       console.log('supabase.js: Token to proxy:', token ? 'Present' : 'Missing');
 
       const dashboardUrl = process.env.DASHBOARD_URL;
-      console.log('supabase.js: Proxying to dashboard URL:', dashboardUrl);
+      console.log('supabase.js: Dashboard URL:', dashboardUrl);
+      console.log('supabase.js: Full proxy URL:', `${dashboardUrl}/netlify/functions/verify-token`);
+      console.log('supabase.js: Request headers:', JSON.stringify({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }));
 
       const response = await fetch(`${dashboardUrl}/netlify/functions/verify-token`, {
         method: 'POST',
@@ -35,8 +40,19 @@ exports.handler = async (event, context) => {
         }
       });
 
-      const data = await response.json();
-      console.log('supabase.js: Proxy response:', data);
+      console.log('supabase.js: Proxy response status:', response.status);
+      const responseText = await response.text();
+      console.log('supabase.js: Proxy raw response:', responseText);
+
+      // Try to parse as JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('supabase.js: Parsed response:', data);
+      } catch (parseError) {
+        console.error('supabase.js: JSON parse error:', parseError);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+      }
 
       return {
         statusCode: response.status,
@@ -54,7 +70,10 @@ exports.handler = async (event, context) => {
           ...headers,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ error: error.message || 'Proxy error' })
+        body: JSON.stringify({ 
+          error: error.message || 'Proxy error',
+          details: error.stack
+        })
       };
     }
   }
