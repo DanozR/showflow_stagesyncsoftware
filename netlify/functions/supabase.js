@@ -1,22 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 
 exports.handler = async (event, context) => {
-  // Add CORS headers
-  const headers = {
-    'Access-Control-Allow-Origin': 'https://showflow.stagesyncsoftware.com',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-  };
-
-  // Handle OPTIONS request for CORS
-  if (event.httpMethod === 'OPTIONS') {
-    console.log('supabase.js: Handling OPTIONS request');
-    return {
-      statusCode: 204,
-      headers
-    };
-  }
-
   try {
     console.log('supabase.js: Creating Supabase client');
     const supabase = createClient(
@@ -34,7 +18,7 @@ exports.handler = async (event, context) => {
     }
 
     // Get user ID from token verification response
-    const verifyUrl = `${process.env.DASHBOARD_URL}/.netlify/functions/verify-token?token=${token}`;
+    const verifyUrl = `${process.env.DASHBOARD_URL}/netlify/functions/verify-token?token=${token}`;
     const verifyResponse = await fetch(verifyUrl);
     const verifyData = await verifyResponse.json();
 
@@ -65,7 +49,6 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 200,
           headers: {
-            ...headers,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
@@ -102,7 +85,6 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 200,
           headers: {
-            ...headers,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
@@ -139,7 +121,6 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 200,
           headers: {
-            ...headers,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
@@ -165,7 +146,7 @@ exports.handler = async (event, context) => {
         console.log('supabase.js: Successfully deleted show');
         return {
           statusCode: 204,
-          headers
+          headers: {}
         };
       }
 
@@ -174,7 +155,6 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 405,
           headers: {
-            ...headers,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -187,7 +167,6 @@ exports.handler = async (event, context) => {
     return {
       statusCode: error.statusCode || 500,
       headers: {
-        ...headers,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
