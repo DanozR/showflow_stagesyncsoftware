@@ -47,7 +47,9 @@ const SaveShowDialog: React.FC<SaveShowDialogProps> = ({
     if (!showName.trim()) return;
 
     // Check if a show with this name already exists
-    const existingShow = existingShows.find(show => show.show_name.toLowerCase() === showName.trim().toLowerCase());
+    const existingShow = existingShows.find(show => 
+      show.show_name.toLowerCase() === showName.trim().toLowerCase()
+    );
     
     if (existingShow && !confirmOverwrite) {
       setConfirmOverwrite(existingShow);

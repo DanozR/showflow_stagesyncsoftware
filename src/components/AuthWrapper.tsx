@@ -1,10 +1,10 @@
-import React, { useEffect, useState, ReactNode } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { isDevelopment } from '../utils/isDevelopment';
 import { checkUserSubscription } from '../utils/checkSubscription';
 
 interface AuthWrapperProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export function AuthWrapper({ children }: AuthWrapperProps) {

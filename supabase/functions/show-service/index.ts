@@ -51,8 +51,7 @@ Deno.serve(async (req) => {
               students: saveData.students,
               conflicts: saveData.conflicts,
               showInfo: saveData.showInfo
-            },
-            version: 1
+            }
           })
           .select()
           .single();

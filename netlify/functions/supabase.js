@@ -36,9 +36,9 @@ exports.handler = async (event, context) => {
     // Get user from token
     console.log('supabase.js: Getting user from token');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError) {
+    if (authError || !user) {
       console.error('supabase.js: Auth error:', authError);
-      throw authError;
+      throw new Error('Invalid token');
     }
     console.log('supabase.js: User found:', user.id);
 
@@ -85,8 +85,7 @@ exports.handler = async (event, context) => {
               students: body.students,
               conflicts: body.conflicts,
               showInfo: body.showInfo
-            },
-            version: 1
+            }
           })
           .select()
           .single();

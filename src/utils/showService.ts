@@ -1,4 +1,5 @@
-import { DanceClass, Student, Conflict, ShowInfo } from '../types';
+import { supabase } from './supabase';
+import { getAuthToken } from './supabase';
 
 export interface SavedShow {
   id: string;
@@ -6,12 +7,11 @@ export interface SavedShow {
   show_name: string;
   name: string;
   data: {
-    classes: DanceClass[];
-    students: Student[];
-    conflicts: Conflict[];
-    showInfo: ShowInfo;
+    classes: any[];
+    students: any[];
+    conflicts: any[];
+    showInfo: any;
   };
-  version: number;
   created_at: string;
   updated_at: string;
 }
@@ -46,10 +46,10 @@ const callNetlifyFunction = async (
 
 export const saveShow = async (
   showName: string,
-  classes: DanceClass[],
-  students: Student[],
-  conflicts: Conflict[],
-  showInfo: ShowInfo
+  classes: any[],
+  students: any[],
+  conflicts: any[],
+  showInfo: any
 ): Promise<SavedShow> => {
   return callNetlifyFunction('POST', {
     showName,
@@ -62,10 +62,10 @@ export const saveShow = async (
 
 export const updateShow = async (
   showId: string,
-  classes: DanceClass[],
-  students: Student[],
-  conflicts: Conflict[],
-  showInfo: ShowInfo
+  classes: any[],
+  students: any[],
+  conflicts: any[],
+  showInfo: any
 ): Promise<SavedShow> => {
   return callNetlifyFunction('PUT', {
     showId,
