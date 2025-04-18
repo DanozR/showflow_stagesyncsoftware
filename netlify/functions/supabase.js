@@ -33,14 +33,17 @@ exports.handler = async (event, context) => {
       throw new Error('Missing JWT');
     }
 
-    // Get user from token
-    console.log('supabase.js: Getting user from token');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      console.error('supabase.js: Auth error:', authError);
+    // Get user ID from token verification response
+    const verifyUrl = `${process.env.DASHBOARD_URL}/.netlify/functions/verify-token?token=${token}`;
+    const verifyResponse = await fetch(verifyUrl);
+    const verifyData = await verifyResponse.json();
+
+    if (!verifyData.valid || !verifyData.userId || verifyData.app !== 'showflow') {
       throw new Error('Invalid token');
     }
-    console.log('supabase.js: User found:', user.id);
+
+    const userId = verifyData.userId;
+    console.log('supabase.js: User verified:', userId);
 
     // Handle different HTTP methods
     console.log('supabase.js: Handling', event.httpMethod, 'request');
@@ -50,7 +53,7 @@ exports.handler = async (event, context) => {
         const { data, error } = await supabase
           .from('shows')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -77,7 +80,7 @@ exports.handler = async (event, context) => {
         const { data, error } = await supabase
           .from('shows')
           .insert({
-            user_id: user.id,
+            user_id: userId,
             show_name: body.showName,
             name: body.showInfo.name,
             data: {
@@ -123,7 +126,7 @@ exports.handler = async (event, context) => {
             }
           })
           .eq('id', body.showId)
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .select()
           .single();
 
@@ -152,7 +155,7 @@ exports.handler = async (event, context) => {
           .from('shows')
           .delete()
           .eq('id', body.showId)
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
 
         if (error) {
           console.error('supabase.js: Error deleting show:', error);

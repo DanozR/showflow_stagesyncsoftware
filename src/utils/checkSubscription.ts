@@ -78,8 +78,8 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     }
 
     // Check for expected response format
-    if (typeof data.valid !== 'boolean') {
-      console.log('checkUserSubscription: Invalid response format - missing valid flag');
+    if (typeof data.valid !== 'boolean' || !data.userId) {
+      console.log('checkUserSubscription: Invalid response format - missing valid flag or userId');
       return {
         valid: false,
         error: 'Invalid response format from verification service'
