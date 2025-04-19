@@ -1,6 +1,3 @@
-import { supabase } from './supabase';
-import { isDevelopment } from './isDevelopment';
-
 export interface SavedShow {
   id: string;
   user_id: string;
@@ -16,18 +13,18 @@ export interface SavedShow {
   updated_at: string;
 }
 
-const getAuthHeaders = async () => {
-  if (isDevelopment()) {
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer dev-token'
-    };
+const getAuthHeaders = () => {
+  // Get token from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  
+  if (!token) {
+    throw new Error('No authentication token found');
   }
 
-  const { data: { session } } = await supabase!.auth.getSession();
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session?.access_token}`
+    'Authorization': `Bearer ${token}`
   };
 };
 

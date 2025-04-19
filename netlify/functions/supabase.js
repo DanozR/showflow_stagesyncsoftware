@@ -18,50 +18,36 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    console.log('supabase.js: Creating Supabase client');
+    // Create Supabase client with service role key
     const supabase = createClient(
       process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
     // Get token from Authorization header
     const token = event.headers.authorization?.replace('Bearer ', '');
-    console.log('supabase.js: Token present:', !!token);
-    
     if (!token) {
-      console.log('supabase.js: No token provided');
-      throw new Error('Missing JWT');
+      throw new Error('No authorization token');
     }
 
-    // Get user ID from token verification response
-    const verifyUrl = `${process.env.DASHBOARD_URL}/netlify/functions/verify-token?token=${token}`;
-    const verifyResponse = await fetch(verifyUrl);
-    const verifyData = await verifyResponse.json();
-
-    if (!verifyData.valid || !verifyData.userId || verifyData.app !== 'showflow') {
+    // Get user from token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
       throw new Error('Invalid token');
     }
 
-    const userId = verifyData.userId;
-    console.log('supabase.js: User verified:', userId);
-
     // Handle different HTTP methods
-    console.log('supabase.js: Handling', event.httpMethod, 'request');
     switch (event.httpMethod) {
       case 'GET': {
         // Get shows for the authenticated user
         const { data, error } = await supabase
           .from('shows')
           .select('*')
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('supabase.js: Error fetching shows:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log('supabase.js: Successfully fetched shows');
         return {
           statusCode: 200,
           headers: {
@@ -74,13 +60,12 @@ exports.handler = async (event, context) => {
 
       case 'POST': {
         const body = JSON.parse(event.body);
-        console.log('supabase.js: Creating new show');
 
         // Save new show
         const { data, error } = await supabase
           .from('shows')
           .insert({
-            user_id: userId,
+            user_id: user.id,
             show_name: body.showName,
             name: body.showInfo.name,
             data: {
@@ -93,12 +78,8 @@ exports.handler = async (event, context) => {
           .select()
           .single();
 
-        if (error) {
-          console.error('supabase.js: Error creating show:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log('supabase.js: Successfully created show');
         return {
           statusCode: 200,
           headers: {
@@ -111,7 +92,6 @@ exports.handler = async (event, context) => {
 
       case 'PUT': {
         const body = JSON.parse(event.body);
-        console.log('supabase.js: Updating show:', body.showId);
 
         // Update existing show
         const { data, error } = await supabase
@@ -126,16 +106,12 @@ exports.handler = async (event, context) => {
             }
           })
           .eq('id', body.showId)
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
           .select()
           .single();
 
-        if (error) {
-          console.error('supabase.js: Error updating show:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log('supabase.js: Successfully updated show');
         return {
           statusCode: 200,
           headers: {
@@ -148,21 +124,16 @@ exports.handler = async (event, context) => {
 
       case 'DELETE': {
         const body = JSON.parse(event.body);
-        console.log('supabase.js: Deleting show:', body.showId);
 
         // Delete show
         const { error } = await supabase
           .from('shows')
           .delete()
           .eq('id', body.showId)
-          .eq('user_id', userId);
+          .eq('user_id', user.id);
 
-        if (error) {
-          console.error('supabase.js: Error deleting show:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log('supabase.js: Successfully deleted show');
         return {
           statusCode: 204,
           headers: corsHeaders
@@ -170,7 +141,6 @@ exports.handler = async (event, context) => {
       }
 
       default:
-        console.log('supabase.js: Invalid method:', event.httpMethod);
         return {
           statusCode: 405,
           headers: {
@@ -183,7 +153,6 @@ exports.handler = async (event, context) => {
         };
     }
   } catch (error) {
-    console.error('supabase.js: Function error:', error);
     return {
       statusCode: error.statusCode || 500,
       headers: {
