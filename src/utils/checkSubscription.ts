@@ -37,8 +37,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
       method: 'GET',
       headers: {
         'Accept': 'application/json'
-      },
-      credentials: 'include'
+      }
     });
 
     console.log('checkUserSubscription: Response status:', response.status);
