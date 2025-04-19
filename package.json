@@ -19,7 +19,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
-    "react-time-picker": "^6.6.0"
+    "react-time-picker": "^6.6.0",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@netlify/functions": "^2.6.0",
