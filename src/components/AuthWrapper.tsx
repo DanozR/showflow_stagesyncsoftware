@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { isDevelopment } from '../utils/isDevelopment';
 import { checkUserSubscription } from '../utils/checkSubscription';
 
@@ -11,7 +11,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const verifyAccess = async () => {
@@ -29,7 +28,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       
       if (!token) {
         console.log('AuthWrapper: No token found, showing error');
-        setError('No authentication token found');
+        setError('Access Denied');
         setLoading(false);
         return;
       }
@@ -41,15 +40,11 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         
         if (!result.valid) {
           console.log('AuthWrapper: Invalid token, showing error');
-          setError(result.error || 'Invalid token');
-        } else {
-          console.log('AuthWrapper: Token verified successfully');
-          // Clear error if it was previously set
-          setError(null);
+          setError(result.error || 'Access Denied');
         }
       } catch (err) {
         console.error('AuthWrapper: Verification error:', err);
-        setError(err instanceof Error ? err.message : 'Authentication failed');
+        setError('Access Denied');
       } finally {
         setLoading(false);
       }
@@ -74,7 +69,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-charcoal mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-6">
             Please launch ShowFlow from your StageSync Software dashboard.
           </p>
           <a
