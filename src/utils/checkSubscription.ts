@@ -34,7 +34,8 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     console.log('checkUserSubscription: Verifying token');
 
     const response = await fetch(verifyUrl.toString(), {
-      method: 'GET'
+      method: 'GET',
+      mode: 'cors'
     });
 
     console.log('checkUserSubscription: Response status:', response.status);

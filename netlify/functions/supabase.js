@@ -1,6 +1,22 @@
 const { createClient } = require('@supabase/supabase-js');
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
 exports.handler = async (event, context) => {
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: corsHeaders,
+      body: ''
+    };
+  }
+
   try {
     console.log('supabase.js: Creating Supabase client');
     const supabase = createClient(
@@ -49,6 +65,7 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 200,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
@@ -85,6 +102,7 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 200,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
@@ -121,6 +139,7 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 200,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(data)
@@ -146,7 +165,7 @@ exports.handler = async (event, context) => {
         console.log('supabase.js: Successfully deleted show');
         return {
           statusCode: 204,
-          headers: {}
+          headers: corsHeaders
         };
       }
 
@@ -155,6 +174,7 @@ exports.handler = async (event, context) => {
         return {
           statusCode: 405,
           headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -167,6 +187,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: error.statusCode || 500,
       headers: {
+        ...corsHeaders,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
