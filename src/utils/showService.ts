@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { getAuthToken } from './supabase';
+import { isDevelopment } from './isDevelopment';
 
 export interface SavedShow {
   id: string;
@@ -16,32 +16,19 @@ export interface SavedShow {
   updated_at: string;
 }
 
-const callNetlifyFunction = async (
-  method: string,
-  data?: any
-): Promise<any> => {
-  // Get token from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch('/.netlify/functions/supabase', {
-    method,
-    headers: {
-      'Authorization': `Bearer ${token}`,
+const getAuthHeaders = async () => {
+  if (isDevelopment()) {
+    return {
       'Content-Type': 'application/json',
-    },
-    body: data ? JSON.stringify(data) : undefined,
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'An error occurred');
+      'Authorization': 'Bearer dev-token'
+    };
   }
 
-  return response.json();
+  const { data: { session } } = await supabase!.auth.getSession();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session?.access_token}`
+  };
 };
 
 export const saveShow = async (
@@ -51,13 +38,25 @@ export const saveShow = async (
   conflicts: any[],
   showInfo: any
 ): Promise<SavedShow> => {
-  return callNetlifyFunction('POST', {
-    showName,
-    classes,
-    students,
-    conflicts,
-    showInfo
+  const headers = await getAuthHeaders();
+  const response = await fetch('/.netlify/functions/supabase', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      showName,
+      classes,
+      students,
+      conflicts,
+      showInfo
+    })
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to save show');
+  }
+
+  return response.json();
 };
 
 export const updateShow = async (
@@ -67,19 +66,52 @@ export const updateShow = async (
   conflicts: any[],
   showInfo: any
 ): Promise<SavedShow> => {
-  return callNetlifyFunction('PUT', {
-    showId,
-    classes,
-    students,
-    conflicts,
-    showInfo
+  const headers = await getAuthHeaders();
+  const response = await fetch('/.netlify/functions/supabase', {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({
+      showId,
+      classes,
+      students,
+      conflicts,
+      showInfo
+    })
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update show');
+  }
+
+  return response.json();
 };
 
 export const listShows = async (): Promise<SavedShow[]> => {
-  return callNetlifyFunction('GET');
+  const headers = await getAuthHeaders();
+  const response = await fetch('/.netlify/functions/supabase', {
+    method: 'GET',
+    headers
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to list shows');
+  }
+
+  return response.json();
 };
 
 export const deleteShow = async (showId: string): Promise<void> => {
-  return callNetlifyFunction('DELETE', { showId });
+  const headers = await getAuthHeaders();
+  const response = await fetch('/.netlify/functions/supabase', {
+    method: 'DELETE',
+    headers,
+    body: JSON.stringify({ showId })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete show');
+  }
 };
