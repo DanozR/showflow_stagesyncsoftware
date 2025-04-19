@@ -34,10 +34,7 @@ export const checkUserSubscription = async (token: string): Promise<Subscription
     console.log('checkUserSubscription: Verifying token');
 
     const response = await fetch(verifyUrl.toString(), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
+      method: 'GET'
     });
 
     console.log('checkUserSubscription: Response status:', response.status);
