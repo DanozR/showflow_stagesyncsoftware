@@ -40,7 +40,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         
         if (!result.valid) {
           console.log('AuthWrapper: Invalid token, showing error');
-          setError(result.error || 'Access Denied');
+          setError('Access Denied');
         }
       } catch (err) {
         console.error('AuthWrapper: Verification error:', err);
